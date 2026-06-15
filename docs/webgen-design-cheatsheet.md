@@ -29,6 +29,13 @@
 
 ## 1. 先问这 8 件事
 
+默认高审美页面设计流程速记：
+1. `design-taste-frontend` 生成初始蓝图
+2. `impeccable audit` 做全面质量审查
+3. 根据问题调用 `arrange / typeset / colorize / polish / animate / harden`
+4. 风格稳定后，在 `skills/impeccable` 体系内用 `teach-impeccable` 记住风格
+5. 最终用 CDP 实看页面验收
+
 1. 这是新页面还是旧页面改版？
 2. 页面目标是什么：转化 / 展示 / 品牌 / 效率 / 叙事？
 3. 面向谁？
@@ -137,6 +144,17 @@
 
 ## 4. 默认审美判断
 
+### 默认流程分工
+- 初始蓝图：`design-taste-frontend`
+- 全面体检：`impeccable audit`
+- 间距节奏：`arrange`
+- 字体层级：`typeset`
+- 配色重塑：`colorize`
+- 细节收口：`polish`
+- 动效增强：`animate`
+- 稳定性加固：`harden`
+- 风格记忆：`teach-impeccable`（属于 `skills/impeccable` 内）
+
 ### 要主动避免
 - 居中大标题 + 按钮 + 三张等宽卡片
 - 紫蓝 AI 发光风
@@ -239,15 +257,94 @@
 
 ## 10. 配图速判
 
-- 优先用户提供图片
-- 用户明确同意后，才去线上找图
+- 优先用户提供图片,其次才去线上找图
 - 真实图优先，找不到再用 SVG 占位
 - 默认图库：Unsplash、Pexels、Pixabay、Shopify / Burst
 - 外链图上线前必须校验可用，并写入 `ASSETS.md`
 
 ---
 
-## 11. 动效选型速查
+## 11. 设计 / 实现 / Taste 命令表
+
+### 11.1 `design-taste-frontend`
+
+| 命令 / skill | 类型 | 用途 |
+|---|---|---|
+| `design-taste-frontend` | 设计蓝图 | 生成初始蓝图、布局骨架、层级方案、微交互方向 |
+
+补充：
+- 这是高审美页面的默认起点
+- 先出 `Design Read`，再定 `DESIGN_VARIANCE / MOTION_INTENSITY / VISUAL_DENSITY`
+- 不负责最终质量验收与专项收口
+
+### 11.2 `frontend-design`
+
+| 命令 / skill | 类型 | 用途 |
+|---|---|---|
+| `frontend-design` | 实现落地 | 把蓝图、结构约束、响应式策略转成真实前端页面与组件代码 |
+
+补充：
+- 在当前 webgen 流程里，`frontend-design` 更偏实现落地，不是最前置的审美蓝图 skill
+- 适合接在 `design-taste-frontend` 与 `impeccable` 审查 / 优化结论之后
+
+### 11.3 `impeccable` 命令表
+
+| 命令 | 类别 | 用途 |
+|---|---|---|
+| `craft [feature]` | Build | 从方案到实现完整塑造一个功能 |
+| `shape [feature]` | Build | 写代码前先规划 UX / UI |
+| `init` | Build | 建立项目设计上下文与基础文档 |
+| `document` | Build | 从现有项目代码生成 DESIGN 文档 |
+| `extract [target]` | Build | 提取可复用 token / 组件为设计系统 |
+| `critique [target]` | Evaluate | 做 UX / 设计评审与启发式打分 |
+| `audit [target]` | Evaluate | 做 a11y / 性能 / 响应式 / 实现质量检查 |
+| `polish [target]` | Refine | 最终交付前精修收口 |
+| `bolder [target]` | Refine | 强化过于保守或平淡的设计 |
+| `quieter [target]` | Refine | 降低过强、过吵、过刺激的表达 |
+| `distill [target]` | Refine | 提纯结构，去掉冗余复杂度 |
+| `harden [target]` | Refine | 补错误态、边界态、i18n、健壮性 |
+| `onboard [target]` | Refine | 优化首用引导、空状态、激活路径 |
+| `animate [target]` | Enhance | 增加有目的的动画与动效 |
+| `colorize [target]` | Enhance | 优化与重塑配色系统 |
+| `typeset [target]` | Enhance | 优化字体、层级、阅读体验 |
+| `arrange [target]` / `layout [target]` | Enhance | 修 spacing、节奏、视觉层级；在 webgen 流程文案里统一记作 `arrange` |
+| `delight [target]` | Enhance | 增加记忆点与人格化细节 |
+| `overdrive [target]` | Enhance | 往更激进、更超常规方向推进 |
+| `clarify [target]` | Fix | 优化文案、标签、错误提示 |
+| `adapt [target]` | Fix | 适配不同设备与屏幕尺寸 |
+| `optimize [target]` | Fix | 诊断和修复 UI 性能问题 |
+| `live` | Iterate | 浏览器内做可视化变体迭代 |
+| `pin <command>` | Manage | 把某个 impeccable 子命令单独 pin 成快捷入口 |
+| `unpin <command>` | Manage | 取消 pin 的快捷入口 |
+| `hooks <on\|off\|status|...>` | Manage | 管理设计检测 hook |
+
+当前 webgen 默认最常用链路：
+- `impeccable audit`
+- `arrange（对应 impeccable 的 layout 能力）/ typeset / colorize / polish / animate / harden`
+- 风格稳定后在 `skills/impeccable` 体系内用 `teach-impeccable`
+
+### 11.4 `taste` 相关命令表
+
+| 命令 | 用途 |
+|---|---|
+| `taste notifications --limit 5` | 查看高信号通知 |
+| `taste feed --limit 3` | 快速看推荐 feed |
+| `taste search "关键词"` | 搜 skill / 工作流 / 能力 |
+| `taste skill @handle/name` | 读取某个 skill 详情 |
+| `taste save @handle/name` | 保存并本地安装 skill |
+| `taste unsave @handle/name` | 取消保存并移除本地安装 |
+| `taste clone <skill> --name <new-name>` | 克隆别人的 skill 做 remix |
+| `taste publish ./my-skill --tags a,b` | 发布自己的 skill |
+| `taste steal <url>` | 把外部链接工作流转成可 remix 的 skill 起点 |
+| `taste following` | 查看关注列表 |
+| `taste followers` | 查看谁关注了你 |
+| `taste follow <handle>` | 关注某个发布者 |
+
+默认使用建议：
+- 发现能力缺口、想找 workflow、想找更好工具时，先用 `taste`
+- `taste` 是能力市场，不是页面实现主流程的一环
+
+## 12. 动效选型速查
 
 ### Anime.js
 适合：轻入场、小交互、小强调
@@ -266,6 +363,7 @@
 
 ### Three.js
 适合：3D Hero、粒子、空间特效、沉浸式展示
+- 背景元素特效，如：火星粒子燃烧飘动,logo或元素的粒子组成动画,流体动效,3D旋转特效等
 
 ### 硬规则
 - 小交互：优先 Anime / Motion
@@ -277,7 +375,7 @@
 
 ---
 
-## 12. 响应式速判
+## 13. 响应式速判
 
 方案里必须明确：
 - 断点策略
@@ -302,7 +400,7 @@
 
 ---
 
-## 13. 什么时候切回完整指南
+## 14. 什么时候切回完整指南
 
 遇到以下情况，不要只看速查表，必须回到 `docs/webgen-design-guide.md`：
 - 需要出正式方案
@@ -312,7 +410,7 @@
 - 需要交付前完整检查
 - 需要更新设计规范本身
 
-## 14. 开工前最后 10 秒检查
+## 15. 开工前最后 10 秒检查
 
 开工前快速问自己：
 - 用户确认方案了吗？

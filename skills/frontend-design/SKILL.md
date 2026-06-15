@@ -6,6 +6,8 @@ license: Apache 2.0. Based on Anthropic's frontend-design skill. See NOTICE.md f
 
 This skill guides creation of distinctive, production-grade frontend interfaces that avoid generic "AI slop" aesthetics. Implement real working code with exceptional attention to aesthetic details and creative choices.
 
+在当前 webgen 工作流里，本 skill 更适合作为**实现落地 skill**：在 `design-taste-frontend` 产出初始蓝图、`impeccable audit` 完成体检、并明确专项优化方向之后，把设计约束转成真实页面结构与代码。
+
 ## Context Gathering Protocol
 
 Design skills produce generic output without project context. You MUST have confirmed design context before doing any design work.
@@ -22,7 +24,8 @@ Individual skills may require additional context — check the skill's preparati
 **Gathering order:**
 1. **Check current instructions (instant)**: If your loaded instructions already contain a **Design Context** section, proceed immediately.
 2. **Check .impeccable.md (fast)**: If not in instructions, read `.impeccable.md` from the project root. If it exists and contains the required context, proceed.
-3. **Run teach-impeccable (REQUIRED)**: If neither source has context, you MUST run /teach-impeccable NOW before doing anything else. Do NOT skip this step. Do NOT attempt to infer context from the codebase instead.
+3. **Ask / collect context explicitly (REQUIRED)**: If neither source has context, you MUST先向用户或任务说明里补齐设计上下文，再继续。Do NOT skip this step. Do NOT attempt to infer context from the codebase instead.
+4. **Use teach-impeccable only after style stabilizes**: `teach-impeccable` 属于 `skills/impeccable` 体系内的风格沉淀步骤，用于记录已经逐渐稳定的风格原则，不是所有设计任务开头都必须先跑的前置动作。
 
 ---
 

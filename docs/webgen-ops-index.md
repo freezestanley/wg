@@ -13,6 +13,15 @@
 - 新项目为什么必须走模板
 - 什么时候必须拒绝跨项目写入
 
+### 1a. 想直接看 SOP 主流程与状态门模型
+看：`docs/webgen-sop-and-gates.md`
+
+适用问题：
+- 当前完整 SOP 到底分几步
+- Workflow stage 和 Gate 怎么对应
+- Discovery 里的输入素材门应该怎么收
+- 什么时候能开工，什么时候必须阻塞
+
 ### 2. 想知道页面设计、配图、资源与验收规则
 看：`docs/webgen-design-guide.md`
 
@@ -110,12 +119,13 @@
 
 ### 工作流 D：项目 session 进入页面方案与实现
 1. 先看 `AGENTS.md` 的 SO-001、SO-004、SO-007、SO-008、SO-009
-2. 出方案前看 `docs/webgen-design-cheatsheet.md`
-3. 需要完整规则时看 `docs/webgen-design-guide.md`
-4. 若是 landing / 营销站 / 作品集 / 重设计类，先形成 `Design Read` 和三档位
-5. 若复杂或大需求，先走 `superpowers` plan，再拆子任务
-6. 若要用真实配图，把来源、用途、校验状态写入 `ASSETS.md`
-7. 交付前按 `docs/webgen-design-guide.md` 的验收项收口
+2. 再看 `docs/webgen-sop-and-gates.md` 对照当前 stage / gate
+3. 出方案前看 `docs/webgen-design-cheatsheet.md`
+4. 需要完整规则时看 `docs/webgen-design-guide.md`
+5. 若是 landing / 营销站 / 作品集 / 重设计类，先形成 `Design Read` 和三档位
+6. 若复杂或大需求，先走 `superpowers` plan，再拆子任务
+7. 若要用真实配图，把来源、用途、校验状态写入 `ASSETS.md`
+8. 交付前按 `docs/webgen-design-guide.md` 的验收项收口
 
 ---
 
@@ -127,6 +137,8 @@
 | 生成 resume 路由 envelope | `./scripts/session-route.sh envelope resume <slug>` |
 | 检查项目 lock | `./scripts/session-lock.sh check <slug> <sessionKey> <mode>` |
 | 初始化新项目 | `./scripts/project-init.sh <slug> <template-id>` |
+| 更新 Gate 状态 | `./scripts/workflow-set-gate.sh <slug> <gate> <status> [note]` |
+| 输出 workflow 报告 | `./scripts/workflow-report.sh <slug>` |
 | 校验 scaffold | `./scripts/project-verify-scaffold.sh <slug> <template-id>` |
 | 启动预览 | `./scripts/project-preview.sh <slug>` |
 | 查看预览状态 | `./scripts/project-preview-status.sh <slug>` |
@@ -140,6 +152,7 @@
 | 场景 | 先看什么 |
 |---|---|
 | 需要完整页面设计规范 | `docs/webgen-design-guide.md` |
+| 需要查看 SOP 主流程与 Gate 放行模型 | `docs/webgen-sop-and-gates.md` |
 | 只想快速判断页面方向 | `docs/webgen-design-cheatsheet.md` |
 | 需要看模板默认能力 | `templates/vite-page/TEMPLATE.md` |
 | 需要确认真实配图与素材策略 | `AGENTS.md` 的 `SO-007` + `docs/webgen-design-guide.md` |
@@ -166,10 +179,11 @@
 
 ### 给 webgen 项目 session
 1. `AGENTS.md`
-2. `docs/webgen-design-guide.md`
-3. `templates/vite-page/TEMPLATE.md`
-4. `docs/session-routing-and-project-commands.md`
-5. `docs/webgen-session-error-handling.md`
+2. `docs/webgen-sop-and-gates.md`
+3. `docs/webgen-design-guide.md`
+4. `templates/vite-page/TEMPLATE.md`
+5. `docs/session-routing-and-project-commands.md`
+6. `docs/webgen-session-error-handling.md`
 
 ---
 

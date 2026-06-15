@@ -16,8 +16,9 @@ slug: <project-slug>
 用户原始需求：<必要时粘贴原话>
 输入资料：<文案 / 图片 / 参考站点 / 接口文档 / 附件>
 实现约束：<原生/框架限制、兼容性、风格、动效、是否要代理>
+设计要求：<是否属于高审美页面、是否需要 design-taste-frontend 生成初始蓝图、是否要求 impeccable audit 与专项优化>
 交付要求：<要新增或修改什么、是否需要打包>
-验证要求：<至少要检查什么>
+验证要求：<至少要检查什么、是否必须做 CDP 页面验收>
 补充说明：<是否允许基于合理假设先做一版>
 ```
 
@@ -33,8 +34,9 @@ slug: <project-slug>
 工作目录：projects/<project-slug>
 当前约束：<延续既有项目约束>
 新增资料：<本轮新增文案 / 图片 / 接口改动>
+设计要求：<是否涉及高审美改版、是否需要重做 design-taste-frontend 初始蓝图、是否需要 impeccable audit 与专项优化>
 交付要求：<这次需要产出什么>
-验证要求：<至少要检查什么>
+验证要求：<至少要检查什么、是否必须做 CDP 页面验收>
 ```
 
 ---
@@ -50,7 +52,8 @@ slug: <project-slug>
 4. 运行：./scripts/project-init.sh <slug> vite-page
 5. 运行：./scripts/session-lock.sh init <slug> <sessionKey>
 6. 写入/补齐 DISCOVERY.md
-7. 进入方案确认门
+7. 若为高审美页面：先补 `design-taste-frontend` 初始蓝图摘要，再规划 `impeccable audit` 与专项优化路径
+8. 进入方案确认门
 ```
 
 ### 2. resume 项目入场检查清单
@@ -60,7 +63,8 @@ slug: <project-slug>
 2. 运行：./scripts/session-lock.sh check <slug> <sessionKey> resume:<slug>
 3. 若 LOCK_MATCH：继续
 4. 读取 PROJECT.md / HANDOFF.md / DISCOVERY.md / ASSETS.md / API.md
-5. 继续方案迭代或实现
+5. 若涉及高审美页面，先检查是否已有 `design-taste-frontend` 初始蓝图摘要与 `impeccable audit` / 专项优化记录；缺失则先补
+6. 继续方案迭代或实现
 ```
 
 ---
@@ -109,7 +113,7 @@ slug: <project-slug>
 
 ```text
 已把这个需求路由到独立项目 session 开始处理。
-接下来我会按项目进度同步：先做信息收集与方案确认，再进入实现和验证。
+接下来我会按项目进度同步：先做信息收集与方案确认；如果属于高审美页面，还会先出初始蓝图、做全面体检和专项优化，再进入实现、验证与设计验收。
 ```
 
 ### 2. 已识别为已有项目续做
@@ -141,6 +145,7 @@ slug:
 任务目标:
 输入资料:
 实现约束:
+设计要求:
 交付要求:
 验证要求:
 ```

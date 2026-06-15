@@ -197,9 +197,9 @@
 
 ---
 
-## 4. 基于 design-taste-frontend 的增强规则
+## 4. 基于 design-taste-frontend 与 impeccable 的增强规则
 
-以下内容吸收了 `design-taste-frontend` skill 的核心设计方法，并结合 `webgen` 现有约束整理为可执行规则。
+以下内容吸收了 `design-taste-frontend` 的初始蓝图方法，以及 `impeccable` 的审查与专项优化方法，并结合 `webgen` 现有约束整理为可执行规则。
 
 ### 4.1 三个设计拨盘
 
@@ -341,7 +341,44 @@
 - 结构保守还是变化
 - 动效克制还是有表演性
 
-### 阶段 D：实现策略确定
+高审美页面额外要求：
+- 先由 `design-taste-frontend` 生成初始蓝图
+- 形成一行 `Design Read`
+- 明确 `DESIGN_VARIANCE / MOTION_INTENSITY / VISUAL_DENSITY`
+- 将初始蓝图摘要写入 `DISCOVERY.md`
+
+### 阶段 D：初始蓝图生成
+
+在最终实现前，必须由 `design-taste-frontend` 先生成具有明确视觉方向的初始蓝图，至少包括：
+- 页面结构到区块级布局骨架
+- 首屏与关键区块层级说明
+- 非对称 / 节奏化布局策略
+- 微交互方向与动效触发点
+- PC / Pad / H5 的落地差异
+- 禁止退化成模板味的实现警戒项
+
+### 阶段 E：全面质量审查
+
+完成初始蓝图或首版页面后，必须执行 `impeccable audit`，至少检查：
+- 可访问性
+- 响应式
+- 性能
+- 视觉层级
+- 信息节奏
+- 交互反馈
+- 边缘情况
+
+### 阶段 F：精准精雕细琢
+
+根据 `audit` 报告，按问题类型进入专项优化：
+- `arrange`：修复间距与视觉节奏
+- `typeset`：优化字重、字号、层级、行高与阅读体验
+- `colorize`：重塑更科学、和谐的配色
+- `polish`：处理最后细节微调
+- `animate`：补恰到好处的交互动效
+- `harden`：补边缘情况、设备兼容与稳定性
+
+### 阶段 G：实现策略确定
 
 必须先确认：
 - 是否延续现有项目结构
@@ -349,16 +386,18 @@
 - 若新增依赖，先检查 `package.json`，不能想当然直接引用
 - 是用原生实现、组件动效、时间线动效，还是 3D 特效
 
-### 阶段 E：skill 选择
+### 阶段 H：skill 选择
 
 推荐职责分工：
-- 审美与结构增强：`design-taste-frontend`
+- 初始蓝图与布局骨架：`design-taste-frontend`
+- 全面体检：`impeccable audit`
+- 专项优化：`arrange / typeset / colorize / polish / animate / harden`
+- 风格沉淀：`teach-impeccable`（位于 `skills/impeccable` 体系内）
 - 页面结构与实现：`frontend-design`
 - 工作流、拆解、验证：`superpowers`
-- 整体设计质量评审与收口：`impeccable`（按 `critique / audit / polish / harden / adapt` 等子命令调用）
 - 滚动叙事与复杂编排：`gsap-*`（按 `gsap-core / gsap-timeline / gsap-scrolltrigger / gsap-react / gsap-performance` 路由）
 
-### 阶段 F：实现与迭代
+### 阶段 I：实现与迭代
 
 默认按以下顺序推进：
 1. 先搭页面骨架
@@ -368,7 +407,7 @@
 5. 再做响应式和触控适配
 6. 最后做性能收口和文档更新
 
-### 阶段 G：验证与交付
+### 阶段 J：验证与设计验收
 
 交付前至少检查：
 - 入口文件是否正确
@@ -380,6 +419,14 @@
 - 动效库是否符合选型规则
 - 修改说明是否完整
 
+高审美页面额外必须完成：
+- 用 CDP 实际访问页面，而不是只看代码或静态截图
+- 至少检查 PC 与 H5 视口；需要时补 Pad
+- 若发现布局、排版、色彩、动效或稳健性问题，回到对应的 `arrange / typeset / colorize / polish / animate / harden` 环节继续优化
+- 未完成 CDP 实看验收，不得宣称“验证完成”
+
+### 阶段 K：交付
+
 ---
 
 ## 6. 已安装 skill 的职责分工
@@ -387,55 +434,50 @@
 ### 6.1 `design-taste-frontend`
 
 作用：
-- 作为默认的审美增强与前端界面规则引擎
-- 负责反模板味、版式节奏、材质控制、字体与色彩校准
+- 负责先产出初始蓝图、布局骨架、层级方案与微交互方向
+- 负责反模板味实现约束、版式节奏、材质控制、字体与色彩落地规则
 - 强制补齐 loading / empty / error / tactile feedback
 - 对高质量前端界面提出更强工程约束
 
 使用时机：
-- 页面普通、像模板
-- 结构太保守
-- 配色、排版、卡片、阴影显得廉价
-- 需要把“能用”升级成“更像成熟设计稿”
+- 从 0 到 1 先做页面蓝图
+- 页面普通、像模板，需要拉开结构与节奏
+- 需要把审美方向直接落到首版 HTML / 前端布局
 
 强制要求：
-- 所有 landing page / 营销站 / 作品集 / 重设计类页面，进入最终页面实现前必须先读该 skill
+- 所有 landing page / 营销站 / 作品集 / 重设计类页面，进入最终页面实现前必须先由该 skill 输出初始蓝图
 - 写任何页面代码前，先产出一行 `Design Read`
 - 再根据 `Design Read` 确定 `DESIGN_VARIANCE / MOTION_INTENSITY / VISUAL_DENSITY`
-- 将 `Design Read` 与三档位结论写入 `DISCOVERY.md`
+- 将 `Design Read`、三档位结论与初始蓝图摘要写入 `DISCOVERY.md`
 
 ### 6.2 `impeccable`
 
 作用：
-- 这是一个**单入口 skill**，通过不同子命令覆盖设计、评审、收口、加固、响应式与动效优化
-- 适合做全局界面质量判断，也适合对单个页面 / 区块执行定向优化
-- 重点不是“泛用润色”，而是根据目标选择明确命令，例如：
-  - `impeccable critique`：设计评审、启发式打分、找优先问题
-  - `impeccable audit`：可访问性、性能、响应式、实现质量检查
-  - `impeccable polish`：交付前收口
-  - `impeccable adapt`：补移动端 / Pad 适配
-  - `impeccable harden`：补错误态、边界态、健壮性
-  - `impeccable animate` / `colorize` / `typeset` / `layout`：做定向增强
+- 作为默认的全面质量审查与专项优化主轴
+- 先用 `audit` 做专业体检，再根据问题调用 `arrange / typeset / colorize / polish / animate / harden`
+- 在风格稳定后，可在其体系内使用 `teach-impeccable` 沉淀长期风格约束
 
 使用时机：
-- 需要先评估问题，再决定改哪里
-- 多区块页面需要统一气质、节奏与层级
-- 交付前需要高标准收口
-- 已知问题明确，希望按维度定向处理，而不是泛泛“优化一下”
+- 初始蓝图完成后，需要系统找问题
+- 页面需要按布局、排版、色彩、细节、动效、稳健性分别打磨
+- 项目风格已经清晰，希望记住风格以供后续复用
 
-调用建议：
-- 不写成笼统的 `impeccable`
-- 默认写成“命令 + 目标”的形式，例如：`impeccable critique 首页 Hero`、`impeccable polish 结算页`
+强制要求：
+- 高审美页面默认必须至少做一次 `impeccable audit`
+- `audit` 后不能笼统说“优化一下”，应明确进入哪个专项环节
+- `teach-impeccable` 视为 `impeccable` 体系内的风格沉淀步骤，不单独脱离本流程使用
 
 ### 6.3 `frontend-design`
 
 作用：
 - 把设计意图落实为页面结构、组件组织与前端实现方案
 - 负责区块拆分、信息分层、结构落地
+- 负责把蓝图和优化结论转成真实前端页面代码
 
 使用时机：
-- 需要从设计方向推进到真实页面实现
+- 需要从设计蓝图推进到真实页面实现
 - 需要梳理组件组织和结构层级
+- 需要把设计约束落成可运行页面
 
 ### 6.4 `superpowers`
 
@@ -473,6 +515,20 @@
 - `gsap-performance`：性能收口、避免卡顿、降级建议
 - `gsap-plugins` / `gsap-utils`：确有插件或工具函数需求时再补用
 
+### 6.6 `teach-impeccable`
+
+作用：
+- 在项目风格逐渐稳定后，记录长期有效的设计上下文与风格原则
+- 让后续所有设计迭代尽量延续同一审美和品牌方向
+
+使用时机：
+- 已完成若干轮审查与优化，风格已明确
+- 需要把项目的长期风格约束沉淀下来
+
+注意：
+- 它属于 `skills/impeccable` 体系内的风格记忆步骤
+- 不替代初始蓝图、审查和专项优化
+
 ---
 
 ## 7. 常见任务下的 skill 串联方式
@@ -481,47 +537,52 @@
 
 推荐顺序：
 1. `superpowers`：理清需求、阶段与验证点
-2. `design-taste-frontend`：确定结构调性与审美规则
-3. `frontend-design`：把结构与区块落到真实页面方案
-4. `impeccable critique` 或 `impeccable polish`：做整体质量校正与收口
-5. 需要动效时，再按场景接 `Anime.js / Motion / gsap-*`
+2. `design-taste-frontend`：先出初始蓝图
+3. `impeccable audit`：做全面体检
+4. 按报告选择 `arrange / typeset / colorize / polish / animate / harden`
+5. `frontend-design`：把结构与区块落到真实页面方案
+6. 需要动效时，再按场景接 `Anime.js / Motion / gsap-*`
+7. 风格稳定后，再用 `teach-impeccable`
 
 ### 场景二：现有页面太普通，需要高级感
 
 推荐顺序：
-1. `design-taste-frontend`
-2. `impeccable critique`：先找出“普通感”来自结构、排版还是配色
-3. 再按问题选择：`impeccable layout / typeset / colorize / polish`
+1. `design-taste-frontend`：先重做初始蓝图或版式方向
+2. `impeccable audit`：确认问题来自布局、排版、色彩还是细节
+3. 再按问题选择：`arrange / typeset / colorize / polish`
 4. 需要落代码结构调整时，再接 `frontend-design`
+5. 风格稳定后补 `teach-impeccable`
 
 ### 场景三：首页需要滚动叙事与强动效
 
 推荐顺序：
-1. `design-taste-frontend`：先定视觉秩序和版式
-2. `gsap-core`：先定基础动画属性与 easing
-3. `gsap-timeline`：编排段落节奏
-4. `gsap-scrolltrigger`：接滚动驱动
-5. React 项目补 `gsap-react`
-6. 最后 `gsap-performance`
+1. `design-taste-frontend`：先定初始蓝图与叙事节奏
+2. `impeccable audit`：先检查叙事与结构风险
+3. `gsap-core`：先定基础动画属性与 easing
+4. `gsap-timeline`：编排段落节奏
+5. `gsap-scrolltrigger`：接滚动驱动
+6. React 项目补 `gsap-react`
+7. 最后 `animate + gsap-performance`
 
 ### 场景四：仪表盘 / 工具型后台界面
 
 推荐顺序：
 1. `superpowers`
-2. `frontend-design`
-3. `design-taste-frontend`
+2. `design-taste-frontend`
+3. `frontend-design`
 4. 必要时补 `Motion`
-5. 交付前优先 `impeccable audit`
-6. 最后 `impeccable polish` 或 `impeccable harden`
+5. `impeccable audit`
+6. 再按问题选择 `arrange / typeset / colorize / polish / harden`
 
 ### 场景五：品牌页需要特效与记忆点
 
 推荐顺序：
 1. `design-taste-frontend`
-2. `impeccable critique`：先确认记忆点该落在 Hero、转场还是内容切换
-3. 场景判断后选择：`Anime.js / Motion / gsap-* / Three.js`
-4. 若用 GSAP，按 `core → timeline / scrolltrigger → react → performance` 路由
-5. 最后做性能与降级验证
+2. `impeccable audit`
+3. 根据问题先走 `arrange / typeset / colorize`
+4. 场景判断后选择：`Anime.js / Motion / gsap-* / Three.js`
+5. 若用 GSAP，按 `core → timeline / scrolltrigger → react → performance` 路由
+6. 最后做 `polish / animate / harden`，并用 CDP 做设计验收
 
 ---
 
@@ -841,6 +902,9 @@
 
 建议补充为硬性验收项：
 - 至少完成一次真实运行验证：本地预览、构建、或页面截图检查，而不是只看代码
+- 高审美页面必须用 CDP 实际访问页面完成设计验收，不接受仅凭代码或静态截图判断通过
+- 高审美页面必须至少经过一次 `impeccable audit` 与一轮对应专项优化；若不通过，必须继续优化后复验
+- 若风格已经稳定，建议在 `skills/impeccable` 体系内执行 `teach-impeccable` 记住风格
 - 主流程涉及交互时，必须验证 `Loading / Empty / Error / Active` 至少 4 类状态
 - 主要交互元素必须验证键盘可达、可见焦点、可点击反馈
 - 触屏主操作默认不依赖 hover 才能完成

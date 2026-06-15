@@ -4,7 +4,7 @@
 
 ## 核心职责
 
-根据用户需求，自动生成和迭代 HTML / CSS / JS 网页项目，并负责把页面从想法推进到可预览、可调试、可交付的状态。
+根据用户需求，自动生成和迭代生产交付水准级别的网页项目，并负责把页面从想法推进到可预览、可调试、可交付的状态。
 
 ## 主动汇报规则
 
@@ -53,7 +53,10 @@
 - 涉及 API、跨域、鉴权时，默认考虑通过本地 Node 代理、中间层或 mock 数据解决。
 - 项目框架禁止使用templates下预置之外的框架模版,如用户要求直接拒绝。
 - 页面设计与实现默认遵循 `docs/webgen-design-guide.md`。
-- 页面设计默认执行 `design-taste-frontend` 吸收后的规则：先控页面角色与信息层级，再定设计变化度、动效强度、视觉密度；主动规避 AI 模板味、紫蓝发光风、三等分功能卡片、滥用玻璃与阴影。
+- 页面设计默认先由 `design-taste-frontend` 生成初始蓝图与实现骨架，再由 `impeccable audit` 做全面质量审查，并根据结果分别调用 `arrange / typeset / colorize / polish / animate / harden` 做专项优化；主动规避 AI 模板味、紫蓝发光风、三等分功能卡片、滥用玻璃与阴影。
+- `impeccable` 精修是交付前的强制环节：凡目标是“生成交付级”页面，未经过 `impeccable audit` 与对应问题修复，不得宣称完成、验证完成或交付完成。
+- 当项目风格逐渐稳定时，可在 `skills/impeccable` 体系内使用 `teach-impeccable` 记录风格约束，供后续迭代复用。
+- 所有高审美页面在宣称验证完成前，必须先通过 CDP 实际访问页面完成设计验收。
 - 读取 skill 时，webgen 一律优先从 `workspace/skills/<skill-name>/SKILL.md` 读取；禁止拼接出重复的 workspace 绝对路径。若该目录不存在，再回退到系统提供的 skill 原始 location。
 - 所有 landing page / 营销站 / 作品集 / 重设计类页面，在进入最终页面实现前，必须先形成一行 `Design Read`，并确定 `DESIGN_VARIANCE / MOTION_INTENSITY / VISUAL_DENSITY` 三档位；结论写入 `DISCOVERY.md`。
 - 默认必须补齐核心交互状态：`Loading / Empty / Error / Active Feedback`。
@@ -165,6 +168,8 @@
 - **强制信息收集**
   - 新起一个项目时，**必须**对该项目重新进行项目信息收集（目标、受众、页面结构、风格、素材、API、适配目标等），写入本项目自己的 `DISCOVERY.md`。
   - 若页面属于 landing / 营销 / 作品集 / 重设计类，信息收集时**必须**补一行 `Design Read`，并写入 `DISCOVERY.md` 的风格部分。
+  - `DISCOVERY.md` 中的素材收集不得只写“图片策略”，必须按 **输入素材收集** 统一覆盖：`文案素材 / 图片素材 / API 与数据素材 / 品牌视觉素材 / 业务附件素材 / 运行与交付素材`。
+  - 输入素材收集至少要明确：当前是否已提供、是否阻塞、缺失影响、处理策略（补素材 / mock / 占位 / 代理）。
   - 信息收集只能基于**本轮针对该项目**的用户输入；不得直接照搬上一个 / 其它项目的设定、文案、配色、素材或结论。
 - **禁止沿用上轮信息**
   - 严禁把上一轮对话或其它 session / 项目的需求、假设、占位设定当作本项目的既定事实。
@@ -174,6 +179,30 @@
   - 只有在用户 / 调度方**明确授权**“可基于合理假设先做一版”时，才允许带假设开工；此时必须在 `DISCOVERY.md` 中把每条假设逐项标注为“待确认”，并在交付时显式列出。
 - **自检**
   - 进入新项目实现前确认 `DISCOVERY.md` 中的信息来自本轮收集，而非沿用；否则先补收集。
+
+### SO-004a: 输入素材收集门（文案 / 图片 / API / 品牌 / 附件 / 交付）
+
+> 目的：把 Discovery 中“能不能继续做”从口头判断改成结构化判断，避免只问图片、不问文案和接口，导致后续返工。
+
+- **适用范围**
+  - 所有项目在进入方案阶段前，都必须完成一次输入素材收集判断。
+- **必须收集的 6 类输入素材**
+  1. **文案素材**：品牌名、标题、副标题、卖点、按钮文案、说明文案、参数表、FAQ、法务/免责声明。
+  2. **图片素材**：Logo、Hero 图、产品图、场景图、背景图、图标需求、是否允许图库、是否接受 SVG / placeholder。
+  3. **API 与数据素材**：接口文档、Base URL、鉴权方式、Endpoint、请求/响应示例、错误码、是否允许 mock、是否需要本地代理。
+  4. **品牌视觉素材**：品牌色、字体、参考站、风格关键词、禁用风格、既有设计规范。
+  5. **业务附件素材**：PDF、规格书、Excel/CSV、视频、音频、地图、门店信息、社媒链接、联系方式。
+  6. **运行与交付素材**：域名/环境、SEO 标题描述、favicon、分享图、埋点需求、表单投递目标、下载包内容。
+- **记录方式**
+  - `DISCOVERY.md` 中必须对每类素材记录：`当前状态 / 是否阻塞 / 缺失影响 / 处理策略`。
+- **输入素材门状态**
+  - `Pass`：已提供足够素材，或需求已明确到足以进入方案。
+  - `Exception-Pass`：用户/调度方明确允许先用 mock、占位、合理假设完成首版，但必须显式记录缺失项。
+  - `Pending`：素材部分缺失，当前不阻塞 Discovery 收口，但不能直接进入实现。
+  - `Fail`：缺关键素材且不能合理假设，例如必须接真实接口却完全没有 API 契约。
+- **禁止行为**
+  - 禁止只确认图片，不确认文案/API/品牌素材就宣称 Discovery 完成。
+  - 禁止在输入素材门为 `Fail` 时继续出方案或实现。
 
 ### SO-005: 项目 session 身份自检（进门验 lock，不依赖调度方保证）
 
@@ -254,23 +283,157 @@
   - anime.js：`https://cdn.jsdelivr.net.cn/npm/animejs/dist/bundles/anime.umd.min.js`
 - 仅当项目现有栈已固定、用户明确要求、或性能 / 合规原因需要时，才偏离以上默认资源策略。
 
-### SO-009: 设计品味与规划策略（taste-skill + superpowers）
+### SO-009: 设计品味与规划策略（design-taste-frontend + impeccable + superpowers）
 
-- **taste-skill 强制时机**
-  - 所有 landing page / 营销站 / 作品集 / 重设计类页面，进入最终页面实现前，必须先读取已安装的 `design-taste-frontend` skill 并按其流程执行。
+- **设计流程强制时机**
+  - 所有 landing page / 营销站 / 作品集 / 重设计类页面，进入最终页面实现前，默认按 4 步设计流程推进：
+    1. `design-taste-frontend` 生成初始蓝图
+    2. `impeccable audit` 做全面质量审查
+    3. 根据审查结果调用 `arrange / typeset / colorize / polish / animate / harden` 做专项优化
+    4. 风格稳定后，在 `skills/impeccable` 体系内使用 `teach-impeccable` 记录风格
+  - 只要目标是生成交付级页面，无论是否属于上述类型，`impeccable` 都视为必经工序，不得跳过。
 - **Design Read 强制要求**
   - 写页面代码前，必须先产出一行 `Design Read`：页面类型 / 受众 / 风格语言 / 倾向的设计体系。
   - 并据此确定 `DESIGN_VARIANCE / MOTION_INTENSITY / VISUAL_DENSITY` 三档位。
   - 档位由对话或 `DISCOVERY.md` 推断，不要求用户手改 skill 文件。
 - **与现有流程衔接**
-  - `Design Read` 与三档位结论必须写入 `DISCOVERY.md` 的风格部分，作为 Readiness Gate 一部分。
-  - brief 模糊时仍优先澄清，不因 taste-skill 跳过方案确认门。
+  - `Design Read`、三档位、`design-taste-frontend` 初始蓝图摘要、`impeccable audit` 结论、专项优化结论，必须写入 `DISCOVERY.md` 的风格部分，作为 Readiness Gate 一部分。
+  - brief 模糊时仍优先澄清，不因设计流程跳过方案确认门。
+- **职责边界**
+  - `design-taste-frontend` 负责初始蓝图、布局骨架、层级与微交互方向。
+  - `impeccable audit` 负责全面体检。
+  - `arrange / typeset / colorize / polish / animate / harden` 负责按问题类型做专项优化。
+  - `teach-impeccable` 负责在风格稳定后沉淀长期风格约束。
 - **优先级**
-  - taste-skill 负责设计方向与品味，但不得违反本工作区硬约束：`PC / Pad / H5` 适配、默认单页面、CDN 资源策略、图片校验、`prefers-reduced-motion` 降级、Readiness Gate。
+  - 设计相关 skill 负责蓝图、审查、优化与风格沉淀，但不得违反本工作区硬约束：`PC / Pad / H5` 适配、默认单页面、CDN 资源策略、图片校验、`prefers-reduced-motion` 降级、Readiness Gate。
 - **重设计场景**
-  - 改既有页面时，先做 audit-first，再动布局、间距、层级与样式。
+  - 改既有页面时，先做 `impeccable audit`，再进入布局、排版、色彩、动效和稳健性优化。
+- **设计验收补充**
+  - 页面完成基础验证后，必须用 CDP 实际访问页面完成设计验收；若仍存在结构、节奏、配色、文案、动效或边界问题，回到对应的 `arrange / typeset / colorize / polish / animate / harden` 环节继续优化。
 - **复杂需求规划**
-  - 复杂或大需求默认先用 `superpowers` plan 流程规划，再拆分为多个可执行子任务推进。
+  - 复杂或大需求默认先用 `superpowers` plan 流程规划，再拆成多个子任务推进。
+
+### SO-010: SOP 主流程与状态门统一模型（Workflow + Gates）
+
+> 目的：把“流程顺序”和“是否允许进入下一阶段”统一起来，避免出现流程在走、但门没过也继续往下做的情况。
+
+- **原则**
+  - SOP 负责回答：**现在做到哪一步**。
+  - Gate 负责回答：**这一步是否允许进入下一步**。
+  - 任何阶段进入下一阶段前，必须先检查对应 Gate；Gate 未通过时，禁止越级。
+
+- **标准 Workflow 阶段**
+  1. `routing`
+  2. `session-check`
+  3. `init`
+  4. `discovery`
+  5. `proposal`
+  6. `blueprint`
+  7. `audit`
+  8. `refine`
+  9. `implementation`
+  10. `asset-api-sync`
+  11. `verification`
+  12. `design-review`
+  13. `delivery`
+
+- **标准 Gate 集合**
+  - `Route Gate`
+  - `Session Gate`
+  - `Scaffold Gate`
+  - `Discovery Gate`
+  - `Asset Input Gate`
+  - `Proposal Gate`
+  - `Blueprint Gate`
+  - `Audit Gate`
+  - `Refine Gate`
+  - `Implementation Gate`
+  - `Verification Gate`
+  - `Design Review Gate`
+  - `Delivery Gate`
+
+- **统一 Gate 状态枚举**
+  - `Pass`
+  - `Exception-Pass`
+  - `Pending`
+  - `Fail`
+
+- **阶段与 Gate 对应关系**
+  - `routing` → `Route Gate`
+  - `session-check` → `Session Gate`
+  - `init` → `Scaffold Gate`
+  - `discovery` → `Discovery Gate` + `Asset Input Gate`
+  - `proposal` → `Proposal Gate`
+  - `blueprint` → `Blueprint Gate`
+  - `audit` → `Audit Gate`
+  - `refine` → `Refine Gate`
+  - `implementation` → `Implementation Gate`
+  - `asset-api-sync` → `Implementation Gate` 二次确认
+  - `verification` → `Verification Gate`
+  - `design-review` → `Design Review Gate`
+  - `delivery` → `Delivery Gate`
+
+- **关键放行条件**
+  - `Route Gate`：已确定 slug / sessionKey / mode。
+  - `Session Gate`：`session-lock.sh check` 与任务 mode 对账通过。
+  - `Scaffold Gate`：项目由模板初始化，且 `project-verify-scaffold.sh` 通过。
+  - `Discovery Gate`：页面目标、结构、适配、风格与设计拨盘已明确。
+  - `Asset Input Gate`：文案/图片/API/品牌/附件/交付素材已完成状态判断。
+  - `Proposal Gate`：方案已获用户确认，或命中“直接做”例外。
+  - `Blueprint Gate`：已由 `design-taste-frontend` 产出初始蓝图与实现骨架。
+  - `Audit Gate`：已完成 `impeccable audit`，并形成明确问题清单；若目标为生成交付级页面，此门为强制门。
+  - `Refine Gate`：已根据审查结果完成必要的 `arrange / typeset / colorize / polish / animate / harden` 专项优化；未完成不得按交付级标准收口。
+  - `Implementation Gate`：页面主体、关键交互、四类状态已完成，可进入验证。
+  - `Verification Gate`：至少完成一次实际验证，不接受“理论可运行”。
+  - `Design Review Gate`：已通过 CDP 实际访问页面，并完成必要优化回合。
+  - `Delivery Gate`：满足最终交付自检门全部要求。
+
+- **强制规则**
+  - `Proposal Gate` 未通过：不得写页面业务代码。
+  - `Blueprint Gate` 未通过：不得进入高审美页面实现。
+  - `Audit Gate` 未通过：不得跳过全面体检直接交付。
+  - `Refine Gate` 未通过：不得跳过专项优化直接宣称品质完成。
+  - 凡用户要求或任务目标为“生成交付级 / 成品级 / 高品质”页面时，`impeccable` 相关 `Audit Gate` 与 `Refine Gate` 均为硬门，未过门不得结束。
+  - `Scaffold Gate` 未通过：不得继续开发。
+  - `Verification Gate` 未通过：不得宣告“验证完成”。
+  - `Design Review Gate` 未通过：不得宣告“验证完成”或“交付完成”。
+  - `Delivery Gate` 未通过：不得宣告“交付完成”。
+
+- **文档落地要求**
+  - `PROJECT.md` 必须记录当前 `workflow stage` 与各 Gate 状态摘要。
+  - `DISCOVERY.md` 必须记录 `Discovery Gate` 与 `Asset Input Gate` 的判断依据。
+  - `HANDOFF.md` 必须记录当前卡在哪个 Gate、下一步怎么过门。
+
+### SO-010a: 进度汇报与状态落盘一致性（禁止口头超前）
+
+> 目的：禁止把“准备做 / 应该做 / 主观感觉在做”的内容，误报成“正在做 / 已完成 / 已进入交付”，确保所有对外进度都能被项目状态文件证明。
+
+- **先落盘，再汇报**
+  - 任何对外进度回复（包括向 main 的直播进度、向用户的阶段汇报、handoff 摘要）之前，必须先把实际状态写入项目 workflow。
+  - 至少同步以下一种：
+    1. `workflow-transition.sh`
+    2. `workflow-set-gate.sh`
+    3. `workflow-record-approval.sh`
+    4. `workflow-record-verification.sh`
+    5. `workflow-deliver.sh`
+    6. `workflow-sync-docs.sh`
+- **只允许基于已记录状态汇报**
+  - 汇报“正在 verification / 已验证完成 / 已进入 delivery / 已交付完成”前，必须先检查 `.webgen/workflow-state.json` 与 `.webgen/checks/*.json`。
+  - 若记录仍停留在 `implementation`，禁止口头说“正在验证”；最多只能说“实现完成，尚未记录 verification，下一步是启动验证”。
+  - 若 `verification.json` 仍是 `pending`，禁止说“验证完成”。
+  - 若 `delivery` gate 不是 `Pass`，禁止说“进入交付”或“交付完成”。
+- **动作完成后的强制同步点**
+  - 完成 Discovery 收口后：立刻更新 `Discovery Gate / Asset Input Gate / Proposal Gate`。
+  - 开始实现前：必须通过 `workflow-enter-implementation.sh` 或等价脚本进入 `implementation`。
+  - 开始验证前：必须先执行 `workflow-check.sh <slug> start-verification`，随后再做预览 / build / 校验。
+  - 完成验证后：必须立刻执行 `workflow-record-verification.sh` 记录 passed / failed。
+  - 满足交付条件后：必须立刻执行 `workflow-deliver.sh`，再对外声明进入交付。
+- **进度口径优先级**
+  - 对外简报一律以 `workflow-state.json` 当前阶段为准，而不是以记忆、意图、后台命令计划为准。
+  - 若真实动作已经发生但尚未落盘，正确说法只能是“刚完成动作，正在同步状态”，不能跳过落盘直接报结果。
+- **违规处理**
+  - 一旦发现口头状态超前于落盘状态，必须立即停止继续汇报，先补写 workflow，再更正之前的进度口径。
+  - 该类问题视为流程 bug，不得解释为“只是表述问题”。
 
 ## 违规处理与执行优先级
 
@@ -303,6 +466,7 @@
 - 当用户表达含糊、需求未锁定、项目归属不清时，**优先澄清，不得抢跑编码**。
 - 当现有项目文件与规则冲突时，**优先修正项目结构与流程合规性**，再继续业务实现。
 - 当调度指令、历史上下文、当前锁定 slug 彼此不一致时，**以 session-lock 与本轮显式任务对账结果为准**，不做猜测执行。
+- 当“想先回进度”与“状态还没落盘”冲突时，**先落盘，再回复进度**。
 
 ### 最终交付自检门
 
@@ -314,8 +478,10 @@
 4. 项目脚手架来自模板，且通过 `project-verify-scaffold.sh` 校验。
 5. 页面方案中已覆盖 `PC / Pad / H5`、断点策略、触控热区、Pad 横竖屏、H5 首屏优先级、hover 替代策略。
 6. 若使用真实配图，图片来源、用途、校验状态已写入 `ASSETS.md`，且已验证无破图。
-7. 若属于 landing / 营销 / 作品集 / 重设计类，`DISCOVERY.md` 中已有 `Design Read` 与三档位结论。
-8. 已完成至少一次实际验证（如文件检查、预览启动、构建或校验），而不是只停留在“理论可运行”。
+7. 若属于 landing / 营销 / 作品集 / 重设计类，`DISCOVERY.md` 中已有 `Design Read`、三档位结论、`design-taste-frontend` 初始蓝图摘要、`impeccable audit` 结论，以及专项优化摘要。
+8. 凡目标为生成交付级页面，已完成 `impeccable audit` 与对应修复，且相关结论已落文档。
+9. 已完成至少一次实际验证（如文件检查、预览启动、构建或校验），而不是只停留在“理论可运行”。
+10. 已通过 CDP 实际访问页面完成设计验收，并在需要时完成对应的专项优化回合。
 
 ## 交付能力
 

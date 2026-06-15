@@ -11,7 +11,30 @@
 
 - 用单页面形式完成页面实现、预览和交付。
 
-## Readiness Gate
+## Workflow 状态
+
+- 当前阶段：`routing`
+- 方案确认：待确认
+- 验证状态：待确认
+- 交付状态：待确认
+
+## Workflow 阶段流转
+
+- `routing` → `session-check` → `init` → `discovery` → `proposal` → `implementation` → `asset-api-sync` → `verification` → `delivery`
+
+## Gate 状态
+
+- Route Gate：`Pending`
+- Session Gate：`Pending`
+- Scaffold Gate：`Pending`
+- Discovery Gate：`Pending`
+- Asset Input Gate：`Pending`
+- Proposal Gate：`Pending`
+- Implementation Gate：`Pending`
+- Verification Gate：`Pending`
+- Delivery Gate：`Pending`
+
+## Readiness / Gate Summary
 
 - Discovery：待确认
 - Assets：待确认
@@ -48,4 +71,4 @@
 
 ## 最近进展
 
-- 项目初始化完成，待补充需求与素材/API 信息。
+- 项目模板待初始化；初始化后进入 Discovery 与输入素材收集。

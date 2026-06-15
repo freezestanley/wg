@@ -95,4 +95,12 @@ if [ -x "$SCRIPT_DIR/project-verify-scaffold.sh" ] || [ -f "$SCRIPT_DIR/project-
   sh "$SCRIPT_DIR/project-verify-scaffold.sh" "$SLUG" "$TEMPLATE_ID" >&2
 fi
 
+if [ -x "$SCRIPT_DIR/workflow-init.sh" ] || [ -f "$SCRIPT_DIR/workflow-init.sh" ]; then
+  sh "$SCRIPT_DIR/workflow-init.sh" "$SLUG" >&2
+fi
+
+if [ -x "$SCRIPT_DIR/workflow-sync-docs.sh" ] || [ -f "$SCRIPT_DIR/workflow-sync-docs.sh" ]; then
+  sh "$SCRIPT_DIR/workflow-sync-docs.sh" "$SLUG" "项目初始化完成" >&2
+fi
+
 printf '%s\n' "$PROJECT_ROOT"
