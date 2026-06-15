@@ -92,13 +92,13 @@ slug=demo
 
 ### 1. new 路由
 
-- `session-route.sh new <slug>` 会生成 `agent:webgen:proj-<slug>-<4位随机>`
+- `session-route.sh new <slug>` 会生成 `agent:webgen:proj-<slug>`
 - 适用于全新项目
 
 ### 2. resume 路由
 
 - `session-route.sh resume <slug>` 从 `.openclaw/webgen-session-registry.json` 读取已绑定 sessionKey
-- 若 registry / lock 里还是旧的非 `agent:webgen:proj-...` legacy key，`session-route.sh resume` 会自动迁移为规范项目 key：`agent:webgen:proj-<slug>`，并同步回写 registry 与项目 lock
+- 若 registry / lock 里还是旧的历史 key（包括非 `agent:webgen:proj-...` key，或带随机后缀的旧 `agent:webgen:proj-<slug>-<rand>` key），`session-route.sh resume` 会自动迁移为规范项目 key：`agent:webgen:proj-<slug>`，并同步回写 registry 与项目 lock
 - 注册表在 `session-lock.sh init` 时自动回写
 
 ### 3. session-lock
@@ -117,7 +117,7 @@ slug=demo
 
 1. 全部 shell/zsh 脚本通过语法检查
 2. `project-init.sh` 能创建 `smoke-route-test`
-3. `session-route.sh new` 能生成随机项目 sessionKey
+3. `session-route.sh new` 能生成规范项目 sessionKey
 4. `session-lock.sh init` 能写入 `.webgen/session-lock.json`
 5. `session-registry.sh` 能记录 slug→sessionKey
 6. `session-route.sh envelope resume` 能正确生成 `mode=resume:<slug>`
@@ -132,7 +132,7 @@ slug=demo
 
 接待 session 指：
 - `agent:webgen:main`
-- 或任何不以 `proj-` 开头的 webgen 会话
+- 或任何不匹配 `agent:webgen:proj-*` 的 webgen 会话
 
 它的职责只有一个：**识别任务并路由**。
 
@@ -146,7 +146,7 @@ slug=demo
 ```
 
 3. 解析输出，得到：
-   - `sessionKey=agent:webgen:proj-<slug>-<rand>`
+   - `sessionKey=agent:webgen:proj-<slug>`
    - `mode=new`
    - `slug=<slug>`
 4. 用 `sessions_send(sessionKey=..., message=...)` 把完整需求投递给项目 session
@@ -187,7 +187,7 @@ slug: <project-slug>
 ### 二、项目 / 执行 session 的职责
 
 项目 session 指：
-- `agent:webgen:proj-<slug>-<rand>` 这类会话
+- `agent:webgen:proj-<slug>` 这类会话
 
 它的职责是：**验 lock → 建项目 / 续项目 → 实现 → 验证 → 交付**。
 

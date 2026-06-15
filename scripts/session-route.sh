@@ -22,9 +22,10 @@ EOF
 normalize_project_key() {
   slug=$1
   key=${2:-}
+  canonical="agent:webgen:proj-$slug"
 
   case "$key" in
-    agent:webgen:proj-*)
+    "$canonical")
       printf '%s\n' "$key"
       ;;
     "")
@@ -32,7 +33,6 @@ normalize_project_key() {
       ;;
     *)
       legacy_lock="$PROJECTS_ROOT/$slug/.webgen/session-lock.json"
-      canonical="agent:webgen:proj-$slug"
       if [ -f "$legacy_lock" ]; then
         node - "$legacy_lock" "$slug" "$canonical" <<'NODE'
 const fs = require("fs");

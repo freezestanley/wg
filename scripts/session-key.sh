@@ -25,13 +25,9 @@ case "$SLUG" in
     ;;
 esac
 
-rand4() {
-  node -e 'process.stdout.write(Math.random().toString(36).slice(2, 6).padEnd(4, "0").slice(0,4))'
-}
-
 case "$ACTION" in
   new)
-    printf 'agent:webgen:proj-%s-%s\n' "$SLUG" "$(rand4)"
+    printf 'agent:webgen:proj-%s\n' "$SLUG"
     ;;
   resume)
     "$REGISTRY_SCRIPT" get "$SLUG"

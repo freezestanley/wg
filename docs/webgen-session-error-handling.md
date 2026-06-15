@@ -144,7 +144,7 @@
 
 **动作**
 - 先确认是否是历史 legacy key（如旧的 `subagent:` key）遗留在 registry / lock 中
-- 对于 legacy key，优先重新运行 `./scripts/session-route.sh envelope resume <slug>` 触发自动迁移到规范 `agent:webgen:proj-<slug>` key
+- 对于 legacy key，优先重新运行 `./scripts/session-route.sh envelope resume <slug>` 触发自动迁移到规范 `agent:webgen:proj-<slug>` key；这里的 legacy 包括旧的 `subagent:` key 和历史随机后缀 key
 - 若迁移后仍不匹配，再停止全部写入，并要求使用修正后的 sessionKey 重试
 
 **固定回复**

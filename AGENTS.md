@@ -119,7 +119,7 @@
      - **拒绝执行**任何写操作。
      - 回复：“当前 session 已锁定项目 `<slug>`，检测到对其它项目（`<other-slug>`）的请求。请在对应项目的 session 中操作，或新开 session。”
 - **新项目必须新 session**
-  - 用户提出与当前锁定 slug 不同的新建站需求时，**不在本 session 处理**；按 SO-003b 双角色调度，由接待 / 调度 session 用 `sessions_send` 路由到唯一的 `agent:webgen:proj-<slug>-<rand>` 独立 session。
+  - 用户提出与当前锁定 slug 不同的新建站需求时，**不在本 session 处理**；按 SO-003b 双角色调度，由接待 / 调度 session 用 `sessions_send` 路由到唯一的 `agent:webgen:proj-<slug>` 独立 session。
 - **写边界**
   - 任何写操作只允许落在 `projects/<本 session 锁定 slug>/` 内，跨项目写一律拒绝。
 - **每个项目必须至少包含**
@@ -141,17 +141,17 @@
 > 目的：把「接需求 / 调度」与「写项目」彻底分到两个 session，从机制上解决「同一 session 既想接新需求又想换项目」的死结。webgen **自身没有创建 / 切换 session 的能力**，唯一能做的是用 `sessions_send` 向一个**尚不存在的 sessionKey** 发消息触发其自动创建——本条据此设计。
 
 - **两种 session 角色（按 sessionKey 区分，自动判定）**
-  - **接待 / 调度 session**：key 为 `agent:webgen:main`，或任何**不以 `proj-` 开头**的 session。**只做调度，绝不写任何项目文件。**
-  - **项目 / 执行 session**：key 形如 `agent:webgen:proj-<slug>-<rand>`（`proj-` 前缀）。**只服务其锁定 slug，按 SO-003a 实现并交付。**
+  - **接待 / 调度 session**：key 为 `agent:webgen:main`，或任何**不匹配 `agent:webgen:proj-*`** 的 session。**只做调度，绝不写任何项目文件。**
+  - **项目 / 执行 session**：key 形如 `agent:webgen:proj-<slug>`。**只服务其锁定 slug，按 SO-003a 实现并交付。**
 - **接待 session 的行为（调度角色）**
-  1. 收到新建站需求时，先生成 slug，再**必须**调用 `./scripts/session-route.sh envelope new <slug>` 生成唯一项目 key（形如 `agent:webgen:proj-<kebab-slug>-<4位随机>`，随机后缀避免与历史项目撞车，呼应 SO-005）。
+  1. 收到新建站需求时，先生成 slug，再**必须**调用 `./scripts/session-route.sh envelope new <slug>` 生成项目 key（形如 `agent:webgen:proj-<kebab-slug>`）。
   2. 收到已有项目续做需求时，**必须**调用 `./scripts/session-route.sh envelope resume <slug>`，从 `.openclaw/webgen-session-registry.json` 恢复既有 `sessionKey`。
   3. 然后用 `sessions_send(sessionKey=..., message=...)` 把**完整需求 + 资源 + 接口文档**投递过去；首发会**自动创建**该项目 session。投递消息中显式标注 `mode: new`（新建）或 `mode: resume:<slug>`（迭代旧项目）。消息模板默认遵循 `docs/webgen-routing-message-templates.md`；异常与拒绝响应默认遵循 `docs/webgen-session-error-handling.md`。
   4. **进入直播模式**：轮询 `sessions_history(sessionKey=该项目 key, includeTools=true)`，把项目 session 的新增步骤翻译成人话逐条播报；交付后用自己口吻汇总。
   5. **绝不在接待 session 写项目文件**，也不自己锁定 slug。
   - ⚠️ 禁止再向用户 / 上游抛出“请新开 session / 我无法切换 session”这类机制提示——接待 session 自己就能用 `sessions_send` 完成路由。
 - **谁来当接待方**
-  - 若环境中存在独立的 main 调度 agent，可由 main 充当接待方（main 用 `sessions_send(agentId="webgen"...)` 或直接发到项目 key）。
+  - 若环境中存在独立的 main 调度 agent，可由 main 充当接待方；Discovery 澄清阶段可用 `sessions_send(agentId="webgen"...)`，一旦进入落地实现阶段必须直接发到项目 `sessionKey`，不要再用 `agentId="webgen"`。
   - 若用户**直接与 webgen 对话**（无 main），则 webgen 的 `agent:webgen:main` session 自己充当接待方，自包含完成路由 + 直播。两种形态规则一致。
 - **硬约束不变**
   - SO-003a 的单项目锁定 / 跨项目写拒绝在项目 session 内完全生效。调度从来不是“在接待 session 里跨项目写”，而是“把任务路由到正确的项目 session 去写”。
@@ -189,7 +189,7 @@
  |---|---|---|
  | **无 lock** | 干净新 session | 按 SO-003a 锁定本次 slug，正常开工 ✅ |
  | **有 lock 且 slug == 本次任务 slug** | 同项目复访 | 若 `mode: resume:<slug>` → 读 PROJECT.md / HANDOFF.md 续做，不重置项目；若 `mode: new` → 拒写，报“该 slug 已存在项目，请换唯一 key 或改用 resume” |
- | **有 lock 但 slug ≠ 本次任务** | ⚠️ session 被占用 / 串了 | **拒绝任何写入**，回报调度方：“此 key 已锁定 `<旧slug>`，与本次任务 `<新slug>` 不符，请换一个带随机后缀的新 key” ❌ |
+| **有 lock 但 slug ≠ 本次任务** | ⚠️ session 被占用 / 串了 | **拒绝任何写入**，回报调度方：“此 key 已锁定 `<旧slug>`，与本次任务 `<新slug>` 不符，请改用目标 slug 对应的规范 key，或为新 slug 生成新的项目 key” ❌ |
 
 - **mode 对账**
   - 调度方投递任务时应携 `mode`；缺失时默认按 `new` 处理。`new` 期望 `session-lock.sh check <slug> <sessionKey> new` 返回 `LOCK_ABSENT`；`resume:<slug>` 期望 `session-lock.sh check <slug> <sessionKey> resume:<slug>` 返回 `LOCK_MATCH`；不符一律拒写并要求换 key。

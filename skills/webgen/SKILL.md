@@ -80,7 +80,7 @@ description: "把网页生成类需求委派给常驻 webgen agent 处理。"
 1. **新项目**
    - 先生成 slug
    - 调用：`./scripts/session-route.sh envelope new <slug>`
-   - 得到：`sessionKey=agent:webgen:proj-<slug>-<rand>`、`mode=new`
+   - 得到：`sessionKey=agent:webgen:proj-<slug>`、`mode=new`
    - 然后用 `sessions_send(sessionKey=..., message=...)` 把完整需求投递到该项目 session
 
 2. **已有项目续做**

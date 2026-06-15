@@ -90,6 +90,7 @@
 - 发现 `resume` 路由会盲信 registry 中历史遗留的非 `proj-` sessionKey，导致项目已切到规范 `proj-<slug>` session 后，旧项目仍可能被错误路由回 legacy `subagent:` session。
 - 已修复 `scripts/session-route.sh`：
   - `resume` / `envelope resume` 发现 legacy key 时，会自动规范化为 `agent:webgen:proj-<slug>`
+  - legacy 范围包含旧的非 `agent:webgen:proj-*` key，以及历史随机后缀 key
   - 同步回写 `.openclaw/webgen-session-registry.json`
   - 同步更新 `projects/<slug>/.webgen/session-lock.json`
   - 保留 `migratedFromSessionKey` 与 `migratedAt` 供排查

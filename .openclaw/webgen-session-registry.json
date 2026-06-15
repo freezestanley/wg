@@ -1,7 +1,3 @@
 {
-  "sony-xm6-official-site": "agent:webgen:proj-sony-xm6-official-site",
-  "live-broadcast-drill": "agent:webgen:proj-live-broadcast-drill",
-  "live-broadcast-drill-v2": "agent:webgen:proj-live-broadcast-drill-v2",
-  "hair-clip-store-home": "agent:webgen:proj-hair-clip-store-home",
-  "aj-basketball-shoe-store": "agent:webgen:proj-aj-basketball-shoe-store"
+  "login-page-h5": "agent:webgen:proj-login-page-h5"
 }
