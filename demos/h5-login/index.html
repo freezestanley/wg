@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>H5 登录页</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <div class="ambient ambient-a"></div>
+      <div class="ambient ambient-b"></div>
+      <main class="login-app">
+        <section class="hero-panel panel-enter">
+          <span class="eyebrow">
+            <i data-lucide="sparkles"></i>
+            Welcome back
+          </span>
+          <h1>登录你的数字空间</h1>
+          <p>
+            面向移动端 H5 的高质感登录入口，强调清晰输入、轻量动效与可交付前端实现。
+          </p>
+
+          <div class="hero-metrics">
+            <article>
+              <strong>1s</strong>
+              <span>极速回到上次进度</span>
+            </article>
+            <article>
+              <strong>24h</strong>
+              <span>多端会话同步保护</span>
+            </article>
+          </div>
+        </section>
+
+        <section class="form-panel panel-enter">
+          <div class="panel-head">
+            <div>
+              <span class="mini-label">Account access</span>
+              <h2>欢迎登录</h2>
+            </div>
+            <button class="ghost-button" type="button" aria-label="切换主题展示">
+              <i data-lucide="moon-star"></i>
+            </button>
+          </div>
+
+          <div class="tab-switch" role="tablist" aria-label="登录方式切换">
+            <button class="tab is-active" type="button" role="tab" aria-selected="true">手机号登录</button>
+            <button class="tab" type="button" role="tab" aria-selected="false">密码登录</button>
+          </div>
+
+          <form class="login-form" id="loginForm">
+            <label class="field">
+              <span>手机号</span>
+              <div class="input-wrap">
+                <i data-lucide="smartphone"></i>
+                <input type="tel" inputmode="numeric" placeholder="请输入手机号" maxlength="11" />
+              </div>
+            </label>
+
+            <label class="field">
+              <span>验证码</span>
+              <div class="input-wrap code-wrap">
+                <i data-lucide="shield-check"></i>
+                <input type="text" inputmode="numeric" placeholder="6位短信验证码" maxlength="6" />
+                <button type="button" class="code-button">获取验证码</button>
+              </div>
+            </label>
+
+            <div class="inline-row">
+              <label class="checkbox">
+                <input type="checkbox" checked />
+                <span>已阅读并同意服务协议与隐私政策</span>
+              </label>
+              <a href="#">帮助</a>
+            </div>
+
+            <button class="submit-button" type="submit">
+              <span>立即登录</span>
+              <i data-lucide="arrow-up-right"></i>
+            </button>
+          </form>
+
+          <div class="divider"><span>或使用以下方式</span></div>
+
+          <div class="quick-actions">
+            <button type="button">
+              <i data-lucide="scan-face"></i>
+              人脸识别
+            </button>
+            <button type="button">
+              <i data-lucide="fingerprint"></i>
+              指纹登录
+            </button>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
