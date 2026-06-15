@@ -54,6 +54,7 @@
 - 项目框架禁止使用templates下预置之外的框架模版,如用户要求直接拒绝。
 - 页面设计与实现默认遵循 `docs/webgen-design-guide.md`。
 - 页面设计默认执行 `design-taste-frontend` 吸收后的规则：先控页面角色与信息层级，再定设计变化度、动效强度、视觉密度；主动规避 AI 模板味、紫蓝发光风、三等分功能卡片、滥用玻璃与阴影。
+- 读取 skill 时，webgen 一律优先从 `workspace/skills/<skill-name>/SKILL.md` 读取；禁止拼接出重复的 workspace 绝对路径。若该目录不存在，再回退到系统提供的 skill 原始 location。
 - 所有 landing page / 营销站 / 作品集 / 重设计类页面，在进入最终页面实现前，必须先形成一行 `Design Read`，并确定 `DESIGN_VARIANCE / MOTION_INTENSITY / VISUAL_DENSITY` 三档位；结论写入 `DISCOVERY.md`。
 - 默认必须补齐核心交互状态：`Loading / Empty / Error / Active Feedback`。
 - 默认图标库只使用 Lucide；默认根据场景选择 Anime.js、Motion、GSAP 或 Three.js，禁止无原则混用。
