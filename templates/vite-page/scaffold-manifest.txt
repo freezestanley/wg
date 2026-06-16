@@ -1,0 +1,17 @@
+.env.example
+.gitignore
+API.md
+ASSETS.md
+docs/api/.gitkeep
+index.html
+package.json
+pnpm-lock.yaml
+src/assets/placeholders/.gitkeep
+src/generated/page.js
+src/lib/api.js
+src/lib/cookie.js
+src/main.js
+src/runtime/create-preview-runtime.js
+src/runtime/render-preview-shell.js
+src/styles.css
+vite.config.js

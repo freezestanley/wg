@@ -30,6 +30,8 @@ APPROVAL_FILE="$PROJECT_ROOT/.webgen/approval.json"
 VERIFICATION_FILE="$PROJECT_ROOT/.webgen/checks/verification.json"
 DELIVERY_FILE="$PROJECT_ROOT/.webgen/checks/delivery.json"
 DESIGN_REVIEW_FILE="$PROJECT_ROOT/.webgen/checks/design-review.json"
+SUMMARY_FILE="$PROJECT_ROOT/.webgen/context-summary.txt"
+SUMMARY_SCRIPT="$SCRIPT_DIR/project-context-summary.mjs"
 
 [ -f "$STATE_FILE" ] || {
   echo "Workflow state not found: $STATE_FILE" >&2
@@ -157,5 +159,9 @@ if (fs.existsSync(handoffFile)) {
   fs.writeFileSync(handoffFile, handoff);
 }
 NODE
+
+if [ -f "$SUMMARY_SCRIPT" ]; then
+  node "$SUMMARY_SCRIPT" "$PROJECT_ROOT" > "$SUMMARY_FILE"
+fi
 
 echo "WORKFLOW DOCS SYNC OK: $SLUG"

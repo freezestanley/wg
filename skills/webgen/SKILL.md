@@ -94,6 +94,7 @@ description: "把网页生成类需求委派给常驻 webgen agent 处理。"
 无论是 new 还是 resume，发送给项目 session 的消息都应显式包含：
 - `mode: new` 或 `mode: resume:<slug>`
 - `slug: <project-slug>`
+- `项目 session 入场命令: sh scripts/project-session-entry.sh <slug> <sessionKey> <mode> [template-id]`
 - 完整需求
 - 素材 / 文案 / 图片 / 接口文档
 - 是否已有项目目录
@@ -147,6 +148,7 @@ description: "把网页生成类需求委派给常驻 webgen agent 处理。"
 ```text
 mode: new
 slug: brand-landing
+项目 session 入场命令: sh scripts/project-session-entry.sh brand-landing <sessionKey> new vite-page
 
 请处理一个网页生成任务。
 
@@ -162,6 +164,7 @@ slug: brand-landing
 ```text
 mode: resume:pricing-redesign
 slug: pricing-redesign
+项目 session 入场命令: sh scripts/project-session-entry.sh pricing-redesign <sessionKey> resume:pricing-redesign
 
 请继续这个网页项目。
 
@@ -197,6 +200,17 @@ slug: pricing-redesign
 ### 5. 如果只是预览 / 构建失败
 - 这是项目内运行问题，不一定需要改路由
 - 允许项目 session 在本项目内继续排障
+
+## 项目恢复读取顺序
+
+对于 resume 项目，默认读取顺序应为：
+- 优先执行 `sh scripts/project-session-entry.sh <slug> <sessionKey> resume:<slug>`
+- 优先执行 `sh scripts/project-resume-context.sh <slug>`
+- 或先读 `.webgen/context-summary.txt`
+- 再按需读 `PROJECT.md`
+- 再按需读 `HANDOFF.md` / `DISCOVERY.md` / `ASSETS.md` / `API.md`
+
+不要把整套项目文档当成默认首读入口，先用短摘要判断当前阶段、Gate 和 Discovery 状态。
 
 ## 返回结果要求
 

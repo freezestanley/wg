@@ -9,6 +9,7 @@
 ```text
 mode: new
 slug: <project-slug>
+项目 session 入场命令: sh scripts/project-session-entry.sh <project-slug> <sessionKey> new vite-page
 
 请处理一个新的网页项目。
 
@@ -27,6 +28,7 @@ slug: <project-slug>
 ```text
 mode: resume:<project-slug>
 slug: <project-slug>
+项目 session 入场命令: sh scripts/project-session-entry.sh <project-slug> <sessionKey> resume:<project-slug>
 
 请继续这个网页项目。
 
@@ -47,22 +49,20 @@ slug: <project-slug>
 
 ```text
 1. 提取 mode 与 slug
-2. 运行：./scripts/session-lock.sh check <slug> <sessionKey> new
-3. 若 LOCK_ABSENT：继续
-4. 运行：./scripts/project-init.sh <slug> vite-page
-5. 运行：./scripts/session-lock.sh init <slug> <sessionKey>
-6. 写入/补齐 DISCOVERY.md
-7. 若为高审美页面：先补 `design-taste-frontend` 初始蓝图摘要，再规划页面实看复核与专项优化路径
-8. 进入方案确认门
+2. 优先执行：sh scripts/project-session-entry.sh <slug> <sessionKey> new vite-page
+3. 若成功：继续
+4. 写入/补齐 DISCOVERY.md
+5. 若为高审美页面：先补 `design-taste-frontend` 初始蓝图摘要，再规划页面实看复核与专项优化路径
+6. 进入方案确认门
 ```
 
 ### 2. resume 项目入场检查清单
 
 ```text
 1. 提取 mode 与 slug
-2. 运行：./scripts/session-lock.sh check <slug> <sessionKey> resume:<slug>
-3. 若 LOCK_MATCH：继续
-4. 读取 PROJECT.md / HANDOFF.md / DISCOVERY.md / ASSETS.md / API.md
+2. 优先执行：sh scripts/project-session-entry.sh <slug> <sessionKey> resume:<slug>
+3. 若成功：继续
+4. 再按需读 PROJECT.md / HANDOFF.md / DISCOVERY.md / ASSETS.md / API.md
 5. 若涉及高审美页面，先检查是否已有 `design-taste-frontend` 初始蓝图摘要与页面复核 / 专项优化记录；缺失则先补
 6. 继续方案迭代或实现
 ```

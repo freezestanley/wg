@@ -33,6 +33,11 @@
 3. **新建项目时自动触发 `/clear`**
    - 当新建项目时自动触发`/clear`.
 
+4. **大文件禁止一次性整块写入**
+   - 当页面、脚本、样式或配置内容明显偏大时，禁止一次性向单文件整块写入超长内容。
+   - 优先拆成多个小组件、小区块、小模块或独立样式文件，再由入口文件引用组装。
+   - 目标是避免因单次写入内容过大导致模型无响应、超时或上下文异常膨胀。
+
 
 ## 你要做的事情
 
@@ -65,6 +70,7 @@
 - 需要配图、且用户未提供素材、并明确允许线上找图时，默认优先真实图片，找不到再退化为 SVG 占位；所有选用图片都要校验可用性并写入 `ASSETS.md`。
 - 默认浏览器侧资源优先使用既定 CDN：Axios、Tailwind CSS、Lucide、Web Awesome、anime.js；除非项目现有体系已固定，或用户明确要求其它方案。
 - 复杂或大需求，默认使用 `superpowers` 的 plan 流程先做规划，再拆成多个子任务推进。
+- 遇到大页面或大文件实现时，默认先拆分 `section / component / module / style`，再由入口文件引用；不要把整页 HTML/CSS/JS 一次性灌进单文件。
 
 # 强制约束（必须遵守）
 ## 编号规则（SOP / Session Operating Rules）
@@ -77,6 +83,7 @@
 2. 方案中必须明确触控热区策略、Pad 横竖屏处理方式、H5 首屏信息优先级，以及 hover 在触屏设备上的替代策略。
 3. 需要配图时，方案中必须明确素材来源策略：用户提供 / 线上图库 / SVG 占位，以及图片校验和落库记录方式。
 4. 复杂需求进入实现前，必须先给出拆分后的子任务计划。
+5. 当单文件内容明显偏大或单次写入预计过长时，必须先拆成多个小组件、小模块或独立样式文件，再由入口文件引用组装。
 
 ### SO-001: 方案确认门（方案未确认禁止开工编码）
 
@@ -137,7 +144,10 @@
   2. 使用模板创建 `projects/<project-slug>/`。
   3. 写入项目文档和 `.webgen` 状态文件。
 - **后续回到同一 session 时**
-  - 先读 `PROJECT.md`，再按需读 `HANDOFF.md`、`DISCOVERY.md`、`ASSETS.md`、`API.md`。
+  - 优先执行：`sh scripts/project-session-entry.sh <slug> <sessionKey> resume:<slug>`
+  - 或执行：`sh scripts/project-resume-context.sh <slug>`
+  - 或至少先读 `.webgen/context-summary.txt`
+  - 再按需读 `PROJECT.md`、`HANDOFF.md`、`DISCOVERY.md`、`ASSETS.md`、`API.md`
 
 ### SO-003b: 双角色调度模型（接待 session 路由 + 项目 session 执行）
 
@@ -217,7 +227,7 @@
  | lock 状态 | 判定 | 处理 |
  |---|---|---|
  | **无 lock** | 干净新 session | 按 SO-003a 锁定本次 slug，正常开工 ✅ |
- | **有 lock 且 slug == 本次任务 slug** | 同项目复访 | 若 `mode: resume:<slug>` → 读 PROJECT.md / HANDOFF.md 续做，不重置项目；若 `mode: new` → 拒写，报“该 slug 已存在项目，请换唯一 key 或改用 resume” |
+| **有 lock 且 slug == 本次任务 slug** | 同项目复访 | 若 `mode: resume:<slug>` → 优先执行 `sh scripts/project-session-entry.sh <slug> <sessionKey> resume:<slug>`，再按需读 PROJECT.md / HANDOFF.md 续做，不重置项目；若 `mode: new` → 拒写，报“该 slug 已存在项目，请换唯一 key 或改用 resume” |
 | **有 lock 但 slug ≠ 本次任务** | ⚠️ session 被占用 / 串了 | **拒绝任何写入**，回报调度方：“此 key 已锁定 `<旧slug>`，与本次任务 `<新slug>` 不符，请改用目标 slug 对应的规范 key，或为新 slug 生成新的项目 key” ❌ |
 
 - **mode 对账**
@@ -247,6 +257,35 @@
   - 模版缺少所需能力时，先反馈并按需选另一模版或请求新增模版，**不得**绕过模版自建结构。
 - **自检**
   - 落地写操作前确认项目脚手架是由 `project-init.sh` 命令复制而来、且 `project-verify-scaffold.sh` 校验通过；若发现是手写 / 裁剪脚手架，停止并改为走脚本重做。
+
+### SO-006a: 大文件拆分写入规则（禁止一次性灌入超长单文件）
+
+> 目的：避免在交付过程中把大段页面代码一次性写入单文件，导致模型无响应、响应超时或单轮上下文被大块代码灌满。
+
+- **触发条件**
+  - 当以下任一情况出现时，视为“大文件风险”：
+    - 单个页面文件预计会变得很长，包含多个大区块或长段内联样式/脚本
+    - 单次 `write` / `edit` 需要写入大段连续 HTML / CSS / JS
+    - 本轮实现明显已超出“一个文件一次写完”仍能稳定生成的体量
+- **默认做法**
+  - 必须优先拆分为更小的实现单元，再由入口文件引用组装。
+  - 优先拆分方向包括：
+    - 页面区块：`sections / blocks / partials`
+    - 复用单元：`components`
+    - 逻辑与数据：`modules / helpers / data`
+    - 样式：独立 `styles` 文件，避免超长内联样式
+  - 入口文件应尽量只负责结构编排、导入引用与页面挂载，不承担整页超长实现细节。
+- **适用示例**
+  - 对 `src/generated/page.js` 的大改，优先拆为多个 section 文件后在 `page.js` 中组装。
+  - 对超长 `index.html`，优先把样式、脚本、可复用区块迁到独立文件。
+  - 对长滚动 landing page，优先按 Hero、Proof、Feature、CTA、FAQ、Footer 等区块拆分。
+- **禁止行为**
+  - 禁止为了省步骤，把整页大段 HTML / CSS / JS 一次性直接灌入 `src/generated/page.js`、`index.html` 或其它单文件。
+  - 禁止在已经明显过大的文件上继续追加超长块，而不先做拆分。
+- **例外**
+  - 只有在页面确实很小、结构简单、且单次写入规模可控时，才允许保持单文件实现。
+- **自检**
+  - 开始写较大页面前，先判断是否存在“大文件风险”；若有，先拆分文件结构，再写具体内容。
 
 ### SO-007: 配图与图片素材策略（真实图优先，必须校验）
 

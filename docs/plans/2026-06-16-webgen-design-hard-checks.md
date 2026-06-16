@@ -4,7 +4,7 @@
 
 **Goal:** 把“首屏焦点、证明区、内容节奏、CTA 收口、H5 首屏优先级”变成页面生成前的硬检查，而不是仅停留在设计文档说明。
 
-**Architecture:** 保持当前最小 workflow 模型不扩阶段，只增强 `DISCOVERY.md` 的结构约束与 `workflow-check.sh` 的前置校验。同步模板文档和索引文档，让调用方和项目 session 都看到同一套生成前硬检查要求。
+**Architecture:** 保持当前最小 workflow 模型不扩阶段，只增强 `DISCOVERY.md` 的结构约束与 `workflow-check.sh` 的前置校验。同步模板文档和索引文档，让调用方和项目 session 都看到同一套生成前硬检查要求；项目 session 的默认入场动作统一由 `project-session-entry.sh` 承接。
 
 **Tech Stack:** Shell, Node.js, Markdown, Vite template docs
 
@@ -63,6 +63,7 @@
 在设计入口和工作流条目里明确：
 - 进入实现前要完成 `Design Read`
 - 要完成老板审版五问
+- 项目 session 默认先走 `project-session-entry.sh`
 - workflow-check 会校验这些项
 
 ### Task 4: 验证
@@ -85,4 +86,3 @@ Expected: 构建通过
 确认：
 - 模板文档已写明硬检查
 - `workflow-check.sh` 已阻止缺少审版检查点的项目直接进入实现
-

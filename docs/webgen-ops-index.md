@@ -112,9 +112,9 @@
 
 ### 工作流 C：项目 session 收到投递消息
 1. 看 `AGENTS.md` 的 SO-005 / SO-006
-2. 先跑 `session-lock.sh check ...`
-3. `new` → `project-init.sh` + `session-lock.sh init`
-4. `resume` → 读取项目文档后继续
+2. 优先跑 `project-session-entry.sh ...`
+3. `new` → 自动完成 `project-init.sh` + `session-lock.sh init`
+4. `resume` → 自动完成 lock 对账 + resume 短摘要
 5. 若遇异常，看 `docs/webgen-session-error-handling.md`
 
 ### 工作流 D：项目 session 进入页面方案与实现
@@ -137,11 +137,13 @@
 | 生成 resume 路由 envelope | `./scripts/session-route.sh envelope resume <slug>` |
 | 检查项目 lock | `./scripts/session-lock.sh check <slug> <sessionKey> <mode>` |
 | 初始化新项目 | `./scripts/project-init.sh <slug> <template-id>` |
+| 项目 session 统一入场 | `./scripts/project-session-entry.sh <slug> <sessionKey> <mode> [template-id]` |
+| 输出 resume 短摘要 | `./scripts/project-resume-context.sh <slug>` |
 | 更新 Gate 状态 | `./scripts/workflow-set-gate.sh <slug> <gate> <status> [note]` |
-| 输出 workflow 报告 | `./scripts/workflow-report.sh <slug>` |
+| 输出 workflow 报告 | `./scripts/workflow-report.sh <slug> [--verbose]` |
 | 校验 scaffold | `./scripts/project-verify-scaffold.sh <slug> <template-id>` |
 | 启动预览 | `./scripts/project-preview.sh <slug>` |
-| 查看预览状态 | `./scripts/project-preview-status.sh <slug>` |
+| 查看预览状态 | `./scripts/project-preview-status.sh <slug> [--verbose]` |
 | 停止预览 | `./scripts/project-preview-stop.sh <slug>` |
 | CDP 设计验收 | `./scripts/project-design-review.sh <slug>` |
 | 页面反模式检查 | `node scripts/page-design-guard.mjs <project-root>` |

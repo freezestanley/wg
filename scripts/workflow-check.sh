@@ -8,6 +8,7 @@ PROJECTS_ROOT="$WORKSPACE_ROOT/projects"
 VERIFY_SCAFFOLD_SCRIPT="$SCRIPT_DIR/project-verify-scaffold.sh"
 SET_GATE_SCRIPT="$SCRIPT_DIR/workflow-set-gate.sh"
 PAGE_DESIGN_GUARD_SCRIPT="$SCRIPT_DIR/page-design-guard.mjs"
+CONTEXT_SUMMARY_SCRIPT="$SCRIPT_DIR/project-context-summary.mjs"
 
 usage() {
   echo "Usage: $0 <project-slug> <action> [sessionKey]" >&2
@@ -24,6 +25,14 @@ fail() {
     if [ -n "${MAPPED_GATE:-}" ]; then
       sh "$SET_GATE_SCRIPT" "$SLUG" "$MAPPED_GATE" Fail "$1" >/dev/null 2>&1 || true
     fi
+  fi
+  if [ -n "${PROJECT_ROOT:-}" ] && [ -f "$CONTEXT_SUMMARY_SCRIPT" ]; then
+    case "$1" in
+      *DISCOVERY.md*|*方案尚未确认*)
+        echo "PROJECT CONTEXT SUMMARY:" >&2
+        node "$CONTEXT_SUMMARY_SCRIPT" "$PROJECT_ROOT" >&2 || true
+        ;;
+    esac
   fi
   echo "WORKFLOW CHECK FAILED: $1" >&2
   exit 2

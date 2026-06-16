@@ -124,6 +124,7 @@
 ### 2. `mode: new` 但 lock 已存在
 
 **触发条件**
+- 已按默认入口执行：`sh scripts/project-session-entry.sh <slug> <sessionKey> new <template-id>`
 - `./scripts/session-lock.sh check <slug> <sessionKey> new` 返回 `LOCK_EXISTS_SAME`
 
 **动作**
@@ -144,6 +145,7 @@
 ### 3. `mode: resume` 但 sessionKey 不匹配
 
 **触发条件**
+- 已按默认入口执行：`sh scripts/project-session-entry.sh <slug> <sessionKey> resume:<slug>`
 - `./scripts/session-lock.sh check <slug> <sessionKey> resume:<slug>` 返回 `LOCK_SESSION_MISMATCH`
 
 **动作**
@@ -164,6 +166,7 @@
 ### 4. `mode: resume` 但项目 lock 缺失
 
 **触发条件**
+- 已按默认入口执行：`sh scripts/project-session-entry.sh <slug> <sessionKey> resume:<slug>`
 - 应该是续做，但 `session-lock.sh check` 返回 `LOCK_ABSENT`
 
 **动作**
@@ -291,6 +294,7 @@
 ### 1. scaffold 校验失败
 
 **触发条件**
+- 若按统一入口处理新项目，则前置命令应为：`sh scripts/project-session-entry.sh <slug> <sessionKey> new <template-id>`
 - `sh scripts/project-verify-scaffold.sh <slug> <template-id>` 非 0
 
 **动作**
@@ -302,7 +306,8 @@
 ```text
 当前项目脚手架与模板不一致，已触发 scaffold 校验失败。
 按规则不能继续在这个无效脚手架上开发。
-需要先执行：sh scripts/project-init.sh <slug> <template-id>
+需要先执行：sh scripts/project-session-entry.sh <slug> <sessionKey> new <template-id>
+若只是单纯重建脚手架，也可直接执行：sh scripts/project-init.sh <slug> <template-id>
 并重新运行：sh scripts/project-verify-scaffold.sh <slug> <template-id>
 校验通过后再继续实现。
 ```

@@ -6,11 +6,19 @@ SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 GUARD_SCRIPT="$SCRIPT_DIR/project-guard.sh"
 
 usage() {
-  echo "Usage: $0 <project-slug>" >&2
+  echo "Usage: $0 <project-slug> [--verbose]" >&2
   exit 1
 }
 
-if [ "$#" -ne 1 ]; then
+[ "$#" -ge 1 ] && [ "$#" -le 2 ] || usage
+
+VERBOSE=0
+if [ "$#" -eq 2 ]; then
+  [ "$2" = "--verbose" ] || usage
+  VERBOSE=1
+fi
+
+if [ "$#" -lt 1 ]; then
   usage
 fi
 
@@ -51,15 +59,33 @@ else
   HTTP_STATUS="unreachable"
 fi
 
-printf 'Preview status: %s\n' "$STATE"
-printf 'Host: %s\n' "$HOST"
-printf 'Port: %s\n' "${PORT:-unassigned}"
-printf 'Healthcheck: %s\n' "${HEALTHCHECK:-unassigned}"
-printf 'PID: %s\n' "${PID:-none}"
-printf 'HTTP: %s\n' "$HTTP_STATUS"
-printf 'Ready At: %s\n' "${READY_AT:-n/a}"
-if [ -n "$LAST_ERROR" ]; then
-  printf 'Last Error: %s\n' "$LAST_ERROR"
+URL=${HEALTHCHECK:-}
+if [ -z "$URL" ] && [ -n "$PORT" ]; then
+  URL="http://${HOST}:${PORT}/"
+fi
+
+if [ "$VERBOSE" -eq 1 ]; then
+  printf 'Preview status: %s\n' "$STATE"
+  printf 'Host: %s\n' "$HOST"
+  printf 'Port: %s\n' "${PORT:-unassigned}"
+  printf 'Healthcheck: %s\n' "${HEALTHCHECK:-unassigned}"
+  printf 'PID: %s\n' "${PID:-none}"
+  printf 'HTTP: %s\n' "$HTTP_STATUS"
+  printf 'Ready At: %s\n' "${READY_AT:-n/a}"
+  if [ -n "$LAST_ERROR" ]; then
+    printf 'Last Error: %s\n' "$LAST_ERROR"
+  fi
+else
+  printf 'preview: %s\n' "$STATE"
+  printf 'url: %s\n' "${URL:-unassigned}"
+  printf 'http: %s\n' "$HTTP_STATUS"
+  printf 'pid: %s\n' "${PID:-none}"
+  if [ -n "$READY_AT" ]; then
+    printf 'ready-at: %s\n' "$READY_AT"
+  fi
+  if [ -n "$LAST_ERROR" ]; then
+    printf 'error: %s\n' "$LAST_ERROR"
+  fi
 fi
 
 if [ "$PID_ALIVE" -eq 1 ]; then

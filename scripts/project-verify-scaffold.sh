@@ -27,6 +27,7 @@ case "$SLUG" in
 esac
 
 SCAFFOLD_ROOT="$TEMPLATES_ROOT/$TEMPLATE_ID/scaffold"
+MANIFEST_FILE="$TEMPLATES_ROOT/$TEMPLATE_ID/scaffold-manifest.txt"
 PROJECT_ROOT="$PROJECTS_ROOT/$SLUG"
 
 if [ ! -d "$SCAFFOLD_ROOT" ]; then
@@ -41,14 +42,26 @@ fi
 
 MISSING=0
 MISSING_LIST=""
-SCAFFOLD_ABS=$(CDPATH= cd -- "$SCAFFOLD_ROOT" && pwd)
 
-for rel in $(cd "$SCAFFOLD_ABS" && find . -type f | sed 's|^\./||'); do
+check_rel() {
+  rel=$1
   if [ ! -f "$PROJECT_ROOT/$rel" ]; then
     MISSING=1
     MISSING_LIST="$MISSING_LIST\n  - $rel"
   fi
-done
+}
+
+if [ -f "$MANIFEST_FILE" ]; then
+  while IFS= read -r rel || [ -n "$rel" ]; do
+    [ -n "$rel" ] || continue
+    check_rel "$rel"
+  done < "$MANIFEST_FILE"
+else
+  SCAFFOLD_ABS=$(CDPATH= cd -- "$SCAFFOLD_ROOT" && pwd)
+  for rel in $(cd "$SCAFFOLD_ABS" && find . -type f | sed 's|^\./||'); do
+    check_rel "$rel"
+  done
+fi
 
 if [ "$MISSING" -ne 0 ]; then
   echo "SCAFFOLD VERIFY FAILED: project '$SLUG' is missing scaffold files copied from template '$TEMPLATE_ID':" >&2

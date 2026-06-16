@@ -91,12 +91,13 @@ routing
 必须动作：
 
 - `session-route.sh envelope new|resume <slug>`
-- `session-lock.sh check <slug> <sessionKey> <mode>`
+- `project-session-entry.sh <slug> <sessionKey> <mode> [template-id]`
+- 必要时再看 `session-lock.sh check <slug> <sessionKey> <mode>` 的底层结果
 
 `Route Gate` / `Session Gate` 通过条件：
 
 - 已能明确 `slug / sessionKey / mode`
-- `session-lock.sh check` 对账通过
+- `project-session-entry.sh` 成功返回，且底层 lock 对账通过
 
 阻塞例子：
 
@@ -170,7 +171,8 @@ routing
 
 必须动作：
 
-- 新项目由 `project-init.sh` 初始化
+- 新项目优先由 `project-session-entry.sh ... new ...` 统一入场
+- 若只做模板重建，才直接使用 `project-init.sh`
 - 写页面业务代码前通过脚手架校验
 - 在页面中补齐 `Loading / Empty / Error / Active Feedback`
 

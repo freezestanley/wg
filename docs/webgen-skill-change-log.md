@@ -74,11 +74,11 @@
   - 默认先进 `agent:webgen:main` 调度 session
   - new 项目走 `session-route.sh envelope new <slug>`
   - resume 项目走 `session-route.sh envelope resume <slug>`
-  - 项目 session 收到 `mode / slug` 后先做 lock 检查，再决定 init 或 resume
+  - 项目 session 收到 `mode / slug` 后优先执行 `project-session-entry.sh <slug> <sessionKey> <mode> [template-id]`
 - 已继续把 `AGENTS.md` 的 SO-003b / SO-005 / SO-006 直接绑定到具体脚本命令：
   - 调度必须走 `session-route.sh envelope new|resume`
-  - 项目 session 写前必须走 `session-lock.sh check`
-  - 新项目必须走 `project-init.sh` + `project-verify-scaffold.sh`
+  - 项目 session 写前默认走 `project-session-entry.sh`
+  - 新项目默认由 `project-session-entry.sh ... new ...` 统一触发 `project-init.sh` + `project-verify-scaffold.sh`
 - 已新增统一索引入口：`docs/webgen-ops-index.md`
 - 已把 `skills/webgen/SKILL.md` 补强为调用方 SOP，覆盖：
   - 何时该委派给 webgen

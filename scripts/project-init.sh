@@ -12,6 +12,14 @@ usage() {
   exit 1
 }
 
+run_quiet() {
+  if OUTPUT=$("$@" 2>&1); then
+    return 0
+  fi
+  printf '%s\n' "$OUTPUT" >&2
+  exit 1
+}
+
 if [ "$#" -ne 2 ]; then
   usage
 fi
@@ -29,6 +37,7 @@ esac
 TEMPLATE_ROOT="$TEMPLATES_ROOT/$TEMPLATE_ID"
 SCAFFOLD_ROOT="$TEMPLATE_ROOT/scaffold"
 POST_INIT_ROOT="$TEMPLATE_ROOT/post-init"
+MANIFEST_FILE="$TEMPLATE_ROOT/scaffold-manifest.txt"
 PROJECT_ROOT="$PROJECTS_ROOT/$SLUG"
 WEBGEN_ROOT="$PROJECT_ROOT/.webgen"
 
@@ -43,7 +52,26 @@ if [ -e "$PROJECT_ROOT" ]; then
 fi
 
 mkdir -p "$PROJECT_ROOT" "$WEBGEN_ROOT"
-cp -R "$SCAFFOLD_ROOT"/. "$PROJECT_ROOT/"
+
+copy_from_manifest() {
+  while IFS= read -r rel || [ -n "$rel" ]; do
+    [ -n "$rel" ] || continue
+    src="$SCAFFOLD_ROOT/$rel"
+    dest="$PROJECT_ROOT/$rel"
+    if [ ! -f "$src" ]; then
+      echo "Template manifest entry missing from scaffold: $rel" >&2
+      exit 1
+    fi
+    mkdir -p "$(dirname "$dest")"
+    cp "$src" "$dest"
+  done < "$MANIFEST_FILE"
+}
+
+if [ -f "$MANIFEST_FILE" ]; then
+  copy_from_manifest
+else
+  cp -R "$SCAFFOLD_ROOT"/. "$PROJECT_ROOT/"
+fi
 
 PROJECT_NAME=$(printf '%s\n' "$SLUG" | tr '-' ' ')
 
@@ -92,15 +120,15 @@ fs.writeFileSync(file, `${JSON.stringify(data, null, 2)}\n`);
 NODE
 
 if [ -x "$SCRIPT_DIR/project-verify-scaffold.sh" ] || [ -f "$SCRIPT_DIR/project-verify-scaffold.sh" ]; then
-  sh "$SCRIPT_DIR/project-verify-scaffold.sh" "$SLUG" "$TEMPLATE_ID" >&2
+  run_quiet sh "$SCRIPT_DIR/project-verify-scaffold.sh" "$SLUG" "$TEMPLATE_ID"
 fi
 
 if [ -x "$SCRIPT_DIR/workflow-init.sh" ] || [ -f "$SCRIPT_DIR/workflow-init.sh" ]; then
-  sh "$SCRIPT_DIR/workflow-init.sh" "$SLUG" >&2
+  run_quiet sh "$SCRIPT_DIR/workflow-init.sh" "$SLUG"
 fi
 
 if [ -x "$SCRIPT_DIR/workflow-sync-docs.sh" ] || [ -f "$SCRIPT_DIR/workflow-sync-docs.sh" ]; then
-  sh "$SCRIPT_DIR/workflow-sync-docs.sh" "$SLUG" "项目初始化完成" >&2
+  run_quiet sh "$SCRIPT_DIR/workflow-sync-docs.sh" "$SLUG" "项目初始化完成"
 fi
 
-printf '%s\n' "$PROJECT_ROOT"
+printf 'project: %s\n' "$PROJECT_ROOT"

@@ -7,12 +7,18 @@ WORKSPACE_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
 PROJECTS_ROOT="$WORKSPACE_ROOT/projects"
 
 usage() {
-  echo "Usage: $0 <project-slug>" >&2
+  echo "Usage: $0 <project-slug> [--verbose]" >&2
   exit 1
 }
 
-[ "$#" -eq 1 ] || usage
+[ "$#" -ge 1 ] && [ "$#" -le 2 ] || usage
 SLUG=$1
+VERBOSE=0
+
+if [ "$#" -eq 2 ]; then
+  [ "$2" = "--verbose" ] || usage
+  VERBOSE=1
+fi
 
 case "$SLUG" in
   *[!a-z0-9-]* | "" )
@@ -33,10 +39,11 @@ DESIGN_REVIEW_FILE="$PROJECT_ROOT/.webgen/checks/design-review.json"
   exit 1
 }
 
-node - "$SLUG" "$STATE_FILE" "$APPROVAL_FILE" "$VERIFICATION_FILE" "$DELIVERY_FILE" "$DESIGN_REVIEW_FILE" <<'NODE'
+node - "$SLUG" "$PROJECT_ROOT" "$STATE_FILE" "$APPROVAL_FILE" "$VERIFICATION_FILE" "$DELIVERY_FILE" "$DESIGN_REVIEW_FILE" "$VERBOSE" <<'NODE'
 const fs = require('fs');
 
-const [slug, stateFile, approvalFile, verificationFile, deliveryFile, designReviewFile] = process.argv.slice(2);
+const [slug, projectRoot, stateFile, approvalFile, verificationFile, deliveryFile, designReviewFile, verboseFlag] = process.argv.slice(2);
+const verbose = verboseFlag === '1';
 
 const readJson = (file, fallback) => {
   try {
@@ -101,6 +108,32 @@ for (const [key, label] of gateOrder) {
   if (gates[key] === 'Pending') blockers.push(`${label}: 待完成`);
 }
 
+const approvalStatus = approval.confirmed
+  ? 'confirmed'
+  : gates.proposal === 'Exception-Pass'
+    ? 'exception-pass'
+    : 'pending';
+const nextSteps = nextStepByStage[state.currentStage] || ['根据当前阶段继续推进'];
+
+if (!verbose) {
+  const lines = [];
+  lines.push(`project: ${projectRoot}`);
+  lines.push(`stage: ${state.currentStage || 'unknown'}`);
+  lines.push(`approval: ${approvalStatus}`);
+  lines.push(`verification: ${verificationStatus}`);
+  lines.push(`design-review: ${designReviewStatus}`);
+  lines.push(`gates: ${gateOrder.map(([key]) => `${key}=${gates[key]}`).join(' ')}`);
+  lines.push(`next: ${nextSteps.join('；')}`);
+  if (blockers.length) {
+    lines.push(`blockers: ${blockers.join('；')}`);
+  }
+  if (delivery.missing && delivery.missing.length) {
+    lines.push(`delivery-missing: ${delivery.missing.join('；')}`);
+  }
+  process.stdout.write(lines.join('\n') + '\n');
+  process.exit(0);
+}
+
 const lines = [];
 lines.push(`# Workflow Report / ${slug}`);
 lines.push('');
@@ -124,7 +157,7 @@ if (blockers.length) {
 }
 lines.push('');
 lines.push('## Next Steps');
-for (const item of nextStepByStage[state.currentStage] || ['根据当前阶段继续推进']) {
+for (const item of nextSteps) {
   lines.push(`- ${item}`);
 }
 if (delivery.missing && delivery.missing.length) {

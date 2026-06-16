@@ -39,6 +39,26 @@ kill_pid() {
   kill -9 "$1" >/dev/null 2>&1 || true
 }
 
+emit_preview_failure() {
+  reason=$1
+  url=${2:-unassigned}
+  note=${3:-}
+  printf 'preview: failed\n' >&2
+  printf 'reason: %s\n' "$reason" >&2
+  printf 'url: %s\n' "$url" >&2
+  printf 'log: %s\n' "$LOG_FILE" >&2
+  if [ -n "$note" ]; then
+    printf 'note: %s\n' "$note" >&2
+  fi
+  printf 'next: sh scripts/project-preview-status.sh %s --verbose\n' "$SLUG" >&2
+}
+
+emit_preview_blocked() {
+  printf 'preview: blocked\n' >&2
+  printf 'reason: preview-gate\n' >&2
+  printf 'next: zsh scripts/preview-manager.sh stop-others %s 或 WEBGEN_PREVIEW_GATE=0 sh scripts/project-preview.sh %s\n' "$SLUG" "$SLUG" >&2
+}
+
 PREPARED=$(node - "$CONFIG_JSON" <<'NODE'
 const fs = require("fs");
 
@@ -84,14 +104,10 @@ fi
 if [ "${WEBGEN_PREVIEW_GATE:-1}" != "0" ]; then
   GATE_OUT=$(zsh "$SCRIPT_DIR/preview-manager.sh" gate "$SLUG" 2>/dev/null) || GATE_RC=$?
   if [ "${GATE_RC:-0}" -eq 10 ]; then
-    printf '%s\n' "$GATE_OUT"
-    echo ""
-    echo "如何恢复预览："
-    echo "  • 关单个：sh scripts/project-preview-stop.sh <slug>"
-    echo "  • 只保留当前：zsh scripts/preview-manager.sh stop-others $SLUG"
-    echo "  • 全部关闭：zsh scripts/preview-manager.sh stop-all"
-    echo "  • 重新预览该项目：sh scripts/project-preview.sh $SLUG  （或进项目目录 pnpm dev）"
-    echo "  • 确认后仍要启动（临时绕过门禁）：WEBGEN_PREVIEW_GATE=0 sh scripts/project-preview.sh $SLUG"
+    emit_preview_blocked
+    if [ -n "$GATE_OUT" ]; then
+      printf 'note: %s\n' "$GATE_OUT" >&2
+    fi
     exit 10
   fi
 fi
@@ -147,8 +163,7 @@ PY
 
       node -e "const fs=require('fs'); const file=process.argv[1]; const data=JSON.parse(fs.readFileSync(file, 'utf8')); data.preview.state={...(data.preview.state||{}), status:'error', pid:null, lastError:'preview process exited before healthcheck became ready'}; fs.writeFileSync(file, JSON.stringify(data, null, 2) + '\n');" "$CONFIG_JSON"
       rm -f "$PID_FILE"
-      echo "Preview process exited before becoming healthy." >&2
-      tail -n 20 "$LOG_FILE" 2>/dev/null || true
+      emit_preview_failure "exited-before-ready" "$HEALTHCHECK" "preview process exited before healthcheck became ready"
       exit 1
     fi
 
@@ -170,11 +185,10 @@ PY
   kill_pid "$PID"
   rm -f "$PID_FILE"
   node -e "const fs=require('fs'); const file=process.argv[1]; const data=JSON.parse(fs.readFileSync(file, 'utf8')); data.preview.state={...(data.preview.state||{}), status:'error', pid:null, lastError:'healthcheck timeout after 30 seconds'}; fs.writeFileSync(file, JSON.stringify(data, null, 2) + '\n');" "$CONFIG_JSON"
-  echo "Preview did not become healthy: $HEALTHCHECK" >&2
-  tail -n 20 "$LOG_FILE" 2>/dev/null || true
+  emit_preview_failure "healthcheck-timeout" "$HEALTHCHECK" "healthcheck timeout after 30 seconds"
   exit 1
 done
 
 node -e "const fs=require('fs'); const file=process.argv[1]; const data=JSON.parse(fs.readFileSync(file, 'utf8')); data.preview.state={...(data.preview.state||{}), status:'error', pid:null, lastError:'all candidate preview ports were exhausted'}; fs.writeFileSync(file, JSON.stringify(data, null, 2) + '\n');" "$CONFIG_JSON"
-echo "Unable to start preview after trying 20 candidate ports from $START_PORT" >&2
+emit_preview_failure "ports-exhausted" "http://${HOST}:${START_PORT}${ENTRY}" "all candidate preview ports were exhausted"
 exit 1

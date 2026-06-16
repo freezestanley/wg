@@ -83,10 +83,12 @@ slug=demo
 
 ```sh
 ./scripts/project-preview.sh <slug>
-./scripts/project-preview-status.sh <slug>
+./scripts/project-preview-status.sh <slug> [--verbose]
 ./scripts/project-preview-stop.sh <slug>
 ./scripts/project-package.sh <slug>
 ```
+
+- `workflow-report.sh` 与 `project-preview-status.sh` 默认输出短摘要，只有显式加 `--verbose` 才输出排障细节。
 
 ## 当前实现约定
 
@@ -172,6 +174,7 @@ slug=demo
 ```text
 mode: new | resume:<slug>
 slug: <project-slug>
+项目 session 入场命令: sh scripts/project-session-entry.sh <slug> <sessionKey> <mode> [template-id]
 ```
 
 以及：
@@ -194,39 +197,27 @@ slug: <project-slug>
 #### 项目 session 收到 `mode=new` 时
 
 1. 读取消息中的 `slug`
-2. 先检查：
+2. 优先执行：
 
 ```sh
-./scripts/session-lock.sh check <slug> <sessionKey> new
+./scripts/project-session-entry.sh <slug> <sessionKey> new vite-page
 ```
 
-3. 处理逻辑：
-   - 若结果是 `LOCK_ABSENT`：说明这是干净项目，可继续
-   - 若结果是 `LOCK_EXISTS_SAME`：说明同 key 已有项目，不应按 new 重建
-   - 若结果是 `LOCK_MISMATCH` / `LOCK_SESSION_MISMATCH`：拒绝写入
-4. 若是首次新建：
-
-```sh
-./scripts/project-init.sh <slug> vite-page
-./scripts/session-lock.sh init <slug> <sessionKey>
-```
-
-5. 然后进入 Discovery / 方案确认 / 实现阶段
+3. 成功后进入 Discovery / 方案确认 / 实现阶段
 
 #### 项目 session 收到 `mode=resume:<slug>` 时
 
 1. 读取消息中的 `slug`
-2. 先检查：
+2. 优先执行：
 
 ```sh
-./scripts/session-lock.sh check <slug> <sessionKey> resume:<slug>
+./scripts/project-session-entry.sh <slug> <sessionKey> resume:<slug>
 ```
 
-3. 若结果是 `LOCK_MATCH`：
-   - 读 `PROJECT.md`
-   - 按需读 `HANDOFF.md` / `DISCOVERY.md` / `ASSETS.md` / `API.md`
+3. 成功后：
+   - 再按需读 `PROJECT.md` / `HANDOFF.md` / `DISCOVERY.md` / `ASSETS.md` / `API.md`
    - 继续项目迭代
-4. 若不是 `LOCK_MATCH`：拒绝写入，要求回到正确 sessionKey
+4. 若失败：拒绝写入，要求回到正确 sessionKey
 
 ---
 
@@ -295,7 +286,7 @@ slug: demo-brand-site
 1. 收到消息先提取 `mode / slug`
 2. 运行 `session-lock.sh check ...`
 3. `new`：`project-init.sh` + `session-lock.sh init`
-4. `resume`：读取项目文档续做
+4. `resume`：先跑 `project-session-entry.sh`，再按需补读项目文档续做
 5. 实现后走 preview / verify / package
 
 ---
