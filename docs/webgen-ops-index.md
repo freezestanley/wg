@@ -49,6 +49,7 @@
 - `session-route.sh` / `session-lock.sh` / `project-init.sh` 分别干什么
 - new / resume 的路由顺序是什么
 - 项目 session 收到消息后先做什么
+- 当前 session 被清空后，怎么从 `projects/` 恢复项目绑定
 
 ### 5. 想直接套消息模板
 看：`docs/webgen-routing-message-templates.md`
@@ -106,9 +107,10 @@
 ### 工作流 B：接待 session 收到一个网页需求
 1. 看 `AGENTS.md` 的 SO-003b
 2. 若要快速判断页面方向，先看 `docs/webgen-design-cheatsheet.md`
-3. 运行 `session-route.sh envelope new|resume <slug>`
-4. 按 `docs/webgen-routing-message-templates.md` 发消息
-5. 若有异常，看 `docs/webgen-session-error-handling.md`
+3. 若当前 session 或 registry 已清空，先跑 `session-recover.sh list`
+4. 运行 `session-route.sh envelope new|resume <slug>`
+5. 按 `docs/webgen-routing-message-templates.md` 发消息
+6. 若有异常，看 `docs/webgen-session-error-handling.md`
 
 ### 工作流 C：项目 session 收到投递消息
 1. 看 `AGENTS.md` 的 SO-005 / SO-006
@@ -135,6 +137,10 @@
 |---|---|
 | 生成 new 路由 envelope | `./scripts/session-route.sh envelope new <slug>` |
 | 生成 resume 路由 envelope | `./scripts/session-route.sh envelope resume <slug>` |
+| 列出可恢复项目 | `./scripts/session-recover.sh list` |
+| 从 lock 恢复项目绑定 | `./scripts/session-recover.sh resume <slug>` |
+| 强制重绑规范 sessionKey | `./scripts/session-recover.sh rebind <slug>` |
+| 从 projects 重建 session registry | `./scripts/session-recover.sh rebuild-registry` |
 | 检查项目 lock | `./scripts/session-lock.sh check <slug> <sessionKey> <mode>` |
 | 初始化新项目 | `./scripts/project-init.sh <slug> <template-id>` |
 | 项目 session 统一入场 | `./scripts/project-session-entry.sh <slug> <sessionKey> <mode> [template-id]` |
@@ -146,6 +152,7 @@
 | 查看预览状态 | `./scripts/project-preview-status.sh <slug> [--verbose]` |
 | 停止预览 | `./scripts/project-preview-stop.sh <slug>` |
 | 查看预览总表 | `zsh ./scripts/preview-manager.sh list` |
+| 查看当前预览限制 | `zsh ./scripts/preview-manager.sh limits` |
 | 固定保留预览 | `zsh ./scripts/preview-manager.sh pin <slug>` |
 | 取消固定预览 | `zsh ./scripts/preview-manager.sh unpin <slug>` |
 | 回收过期预览 | `zsh ./scripts/preview-manager.sh gc` |

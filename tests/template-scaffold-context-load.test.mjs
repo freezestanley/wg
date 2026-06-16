@@ -17,10 +17,12 @@ const SUMMARY_SCRIPT = join(WORKSPACE_ROOT, "scripts/project-context-summary.mjs
 const SYNC_DOCS_SCRIPT = join(WORKSPACE_ROOT, "scripts/workflow-sync-docs.sh");
 const RESUME_CONTEXT_SCRIPT = join(WORKSPACE_ROOT, "scripts/project-resume-context.sh");
 const SESSION_ENTRY_SCRIPT = join(WORKSPACE_ROOT, "scripts/project-session-entry.sh");
+const SESSION_RECOVER_SCRIPT = join(WORKSPACE_ROOT, "scripts/session-recover.sh");
 const WORKFLOW_REPORT_SCRIPT = join(WORKSPACE_ROOT, "scripts/workflow-report.sh");
 const PREVIEW_STATUS_SCRIPT = join(WORKSPACE_ROOT, "scripts/project-preview-status.sh");
 const PREVIEW_SCRIPT = join(WORKSPACE_ROOT, "scripts/project-preview.sh");
 const PREVIEW_MANAGER_SCRIPT = join(WORKSPACE_ROOT, "scripts/preview-manager.sh");
+const GLOBAL_CONFIG_FILE = join(WORKSPACE_ROOT, ".openclaw", "webgen-config.json");
 const ROUTING_TEMPLATE_FILE = join(WORKSPACE_ROOT, "docs", "webgen-routing-message-templates.md");
 const ERROR_HANDLING_FILE = join(WORKSPACE_ROOT, "docs", "webgen-session-error-handling.md");
 const SOP_GATES_FILE = join(WORKSPACE_ROOT, "docs", "webgen-sop-and-gates.md");
@@ -252,6 +254,136 @@ test("project session entry handles new and resume flows", () => {
   }
 });
 
+test("session recover lists projects and rebuilds canonical registry from locks", () => {
+  const slug = `session-recover-${Date.now()}`;
+  const legacyKey = `subagent:legacy-${slug}`;
+  const registryFile = join(WORKSPACE_ROOT, ".openclaw", "webgen-session-registry.json");
+  const registryBackup = existsSync(registryFile)
+    ? execFileSync("cat", [registryFile], { cwd: WORKSPACE_ROOT, encoding: "utf8" })
+    : null;
+
+  try {
+    execFileSync("sh", ["scripts/project-init.sh", slug, "vite-page"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    const lockFile = join(WORKSPACE_ROOT, "projects", slug, ".webgen", "session-lock.json");
+    execFileSync("node", ["-e", `
+      const fs=require("fs");
+      const file=process.argv[1];
+      const data={slug:process.argv[2], sessionKey:process.argv[3], boundAt:"2026-06-16T00:00:00.000Z"};
+      fs.writeFileSync(file, JSON.stringify(data, null, 2) + "\\n");
+    `, lockFile, slug, legacyKey], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    writeFileSync(registryFile, "{}\n");
+
+    const listOutput = execFileSync("sh", [SESSION_RECOVER_SCRIPT, "list"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    assert.match(listOutput, /^slug: /m);
+    assert.match(listOutput, new RegExp(`slug: ${slug}`));
+    assert.match(listOutput, /sessionKey:/);
+
+    const rebuildOutput = execFileSync("sh", [SESSION_RECOVER_SCRIPT, "rebuild-registry"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    assert.match(rebuildOutput, /registry: rebuilt/);
+
+    const registry = JSON.parse(execFileSync("cat", [registryFile], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    }));
+    assert.equal(registry[slug], `agent:webgen:proj-${slug}`);
+  } finally {
+    if (registryBackup === null) {
+      rmSync(registryFile, { force: true });
+    } else {
+      writeFileSync(registryFile, registryBackup);
+    }
+    rmSync(join(WORKSPACE_ROOT, "projects", slug), { recursive: true, force: true });
+  }
+});
+
+test("session recover resume and rebind normalize lock to canonical key", () => {
+  const slug = `session-rebind-${Date.now()}`;
+  const legacyKey = `subagent:legacy-${slug}`;
+  const canonicalKey = `agent:webgen:proj-${slug}`;
+  const registryFile = join(WORKSPACE_ROOT, ".openclaw", "webgen-session-registry.json");
+  const registryBackup = existsSync(registryFile)
+    ? execFileSync("cat", [registryFile], { cwd: WORKSPACE_ROOT, encoding: "utf8" })
+    : null;
+
+  try {
+    execFileSync("sh", ["scripts/project-init.sh", slug, "vite-page"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    const lockFile = join(WORKSPACE_ROOT, "projects", slug, ".webgen", "session-lock.json");
+    execFileSync("node", ["-e", `
+      const fs=require("fs");
+      const file=process.argv[1];
+      const data={slug:process.argv[2], sessionKey:process.argv[3], boundAt:"2026-06-16T00:00:00.000Z"};
+      fs.writeFileSync(file, JSON.stringify(data, null, 2) + "\\n");
+    `, lockFile, slug, legacyKey], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    writeFileSync(registryFile, "{}\n");
+
+    const resumeOutput = execFileSync("sh", [SESSION_RECOVER_SCRIPT, "resume", slug], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    assert.match(resumeOutput, new RegExp(`sessionKey=${canonicalKey}`));
+    assert.match(resumeOutput, new RegExp(`mode=resume:${slug}`));
+
+    let lock = JSON.parse(execFileSync("cat", [lockFile], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    }));
+    assert.equal(lock.sessionKey, canonicalKey);
+
+    execFileSync("node", ["-e", `
+      const fs=require("fs");
+      const file=process.argv[1];
+      const data=JSON.parse(fs.readFileSync(file,"utf8"));
+      data.sessionKey = process.argv[2];
+      fs.writeFileSync(file, JSON.stringify(data, null, 2) + "\\n");
+    `, lockFile, legacyKey], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    writeFileSync(registryFile, "{}\n");
+
+    const rebindOutput = execFileSync("sh", [SESSION_RECOVER_SCRIPT, "rebind", slug], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    assert.match(rebindOutput, /rebound:/);
+
+    lock = JSON.parse(execFileSync("cat", [lockFile], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    }));
+    assert.equal(lock.sessionKey, canonicalKey);
+    assert.equal(lock.reboundFromSessionKey, legacyKey);
+    assert.equal(typeof lock.reboundAt, "string");
+  } finally {
+    if (registryBackup === null) {
+      rmSync(registryFile, { force: true });
+    } else {
+      writeFileSync(registryFile, registryBackup);
+    }
+    rmSync(join(WORKSPACE_ROOT, "projects", slug), { recursive: true, force: true });
+  }
+});
+
 test("workflow report defaults to compact summary lines", () => {
   const slug = `workflow-report-${Date.now()}`;
 
@@ -427,6 +559,53 @@ test("preview manager supports registry controls and respects pinned previews", 
   } finally {
     rmSync(join(WORKSPACE_ROOT, "projects", keepSlug), { recursive: true, force: true });
     rmSync(join(WORKSPACE_ROOT, "projects", pinnedSlug), { recursive: true, force: true });
+  }
+});
+
+test("preview manager reads capacity limits from global config with env override", () => {
+  const backup = existsSync(GLOBAL_CONFIG_FILE)
+    ? execFileSync("cat", [GLOBAL_CONFIG_FILE], { cwd: WORKSPACE_ROOT, encoding: "utf8" })
+    : null;
+
+  try {
+    writeFileSync(
+      GLOBAL_CONFIG_FILE,
+      JSON.stringify(
+        {
+          preview: {
+            max: 3,
+            ttlMinutes: 15
+          }
+        },
+        null,
+        2
+      ) + "\n"
+    );
+
+    const configured = execFileSync("zsh", [PREVIEW_MANAGER_SCRIPT, "limits"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    assert.match(configured, /^preview-max: 3$/m);
+    assert.match(configured, /^preview-ttl-minutes: 15$/m);
+
+    const overridden = execFileSync("zsh", [PREVIEW_MANAGER_SCRIPT, "limits"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        WEBGEN_PREVIEW_MAX: "5",
+        WEBGEN_PREVIEW_TTL_MINUTES: "25"
+      }
+    });
+    assert.match(overridden, /^preview-max: 5$/m);
+    assert.match(overridden, /^preview-ttl-minutes: 25$/m);
+  } finally {
+    if (backup === null) {
+      rmSync(GLOBAL_CONFIG_FILE, { force: true });
+    } else {
+      writeFileSync(GLOBAL_CONFIG_FILE, backup);
+    }
   }
 });
 

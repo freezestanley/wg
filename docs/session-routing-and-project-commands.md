@@ -26,6 +26,7 @@
 - `scripts/session-key.sh`
 - `scripts/session-lock.sh`
 - `scripts/session-route.sh`
+- `scripts/session-recover.sh`
 
 ## 路由状态文件
 
@@ -52,6 +53,20 @@
 ./scripts/session-route.sh envelope new <slug>
 ./scripts/session-route.sh envelope resume <slug>
 ```
+
+### 当前 session 清空后的项目恢复 / 重绑
+
+```sh
+./scripts/session-recover.sh list
+./scripts/session-recover.sh resume <slug>
+./scripts/session-recover.sh rebind <slug>
+./scripts/session-recover.sh rebuild-registry
+```
+
+- `list`：扫描 `projects/*/.webgen/session-lock.json`，输出项目短摘要
+- `resume`：以项目 lock 为事实源，恢复为规范 key `agent:webgen:proj-<slug>`
+- `rebind`：当 lock 仍是 legacy key 时，强制回写新的规范 key，并记录 `reboundFromSessionKey / reboundAt`
+- `rebuild-registry`：当 `.openclaw/webgen-session-registry.json` 被清空或损坏时，从 `projects/` 全量重建
 
 输出示例：
 
@@ -95,6 +110,7 @@ zsh ./scripts/preview-manager.sh gc
 - `workflow-report.sh` 与 `project-preview-status.sh` 默认输出短摘要，只有显式加 `--verbose` 才输出排障细节。
 - `project-preview.sh` 启动前会自动做 `reap + gc + ensure-capacity`，优先回收旧预览、释放端口。
 - `workflow-deliver.sh` 完成后默认只保留当前项目预览，其它未 pin 预览会自动关闭。
+- 预览治理默认值统一来自 `.openclaw/webgen-config.json`；环境变量如 `WEBGEN_PREVIEW_MAX` 只作为临时覆盖层。
 
 ## 当前实现约定
 
@@ -108,6 +124,16 @@ zsh ./scripts/preview-manager.sh gc
 - `session-route.sh resume <slug>` 从 `.openclaw/webgen-session-registry.json` 读取已绑定 sessionKey
 - 若 registry / lock 里还是旧的历史 key（包括非 `agent:webgen:proj-...` key，或带随机后缀的旧 `agent:webgen:proj-<slug>-<rand>` key），`session-route.sh resume` 会自动迁移为规范项目 key：`agent:webgen:proj-<slug>`，并同步回写 registry 与项目 lock
 - 注册表在 `session-lock.sh init` 时自动回写
+
+### 2a. session 清空后的恢复入口
+
+- `session-recover.sh` 不依赖当前 session 上下文，直接以 `projects/<slug>/.webgen/session-lock.json` 为主事实源
+- 推荐顺序：
+  1. `session-recover.sh list`
+  2. `session-recover.sh resume <slug>`
+  3. 再由调度侧投递到 `sessionKey=agent:webgen:proj-<slug>`
+- 若 registry 已丢失，先执行 `session-recover.sh rebuild-registry`
+- 若 lock 还是 legacy key，需要显式做一次重绑时，执行 `session-recover.sh rebind <slug>`
 
 ### 3. session-lock
 
@@ -265,6 +291,9 @@ slug: demo-brand-site
 | 生成新 sessionKey | `session-route.sh new` |
 | 生成恢复 sessionKey | `session-route.sh resume` |
 | 生成路由 envelope | `session-route.sh envelope` |
+| 从项目 lock 恢复规范 key | `session-recover.sh resume` |
+| 强制重绑规范 key | `session-recover.sh rebind` |
+| 从 projects 全量重建 registry | `session-recover.sh rebuild-registry` |
 | 记录 slug→sessionKey | `session-registry.sh set` |
 | 读取 slug→sessionKey | `session-registry.sh get` |
 | 写入项目 lock | `session-lock.sh init` |
@@ -275,6 +304,7 @@ slug: demo-brand-site
 | 查询预览状态 | `project-preview-status.sh` |
 | 停止预览 | `project-preview-stop.sh` |
 | 查看预览总表 | `preview-manager.sh list` |
+| 查看当前预览限制 | `preview-manager.sh limits` |
 | 固定保留预览 | `preview-manager.sh pin` |
 | 取消固定预览 | `preview-manager.sh unpin` |
 | 回收过期预览 | `preview-manager.sh gc` |

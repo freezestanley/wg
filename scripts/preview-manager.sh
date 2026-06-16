@@ -6,8 +6,9 @@ SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 WORKSPACE_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
 PROJECTS_ROOT="$WORKSPACE_ROOT/projects"
 STOP_SCRIPT="$SCRIPT_DIR/project-preview-stop.sh"
-PREVIEW_MAX=${WEBGEN_PREVIEW_MAX:-8}
-PREVIEW_TTL_MINUTES=${WEBGEN_PREVIEW_TTL_MINUTES:-60}
+CONFIG_SCRIPT="$SCRIPT_DIR/webgen-config.sh"
+PREVIEW_MAX=$(sh "$CONFIG_SCRIPT" read preview.max 8 WEBGEN_PREVIEW_MAX)
+PREVIEW_TTL_MINUTES=$(sh "$CONFIG_SCRIPT" read preview.ttlMinutes 60 WEBGEN_PREVIEW_TTL_MINUTES)
 REGISTRY_DIR="$WORKSPACE_ROOT/.openclaw"
 REGISTRY_FILE="$REGISTRY_DIR/preview-registry.json"
 
@@ -24,6 +25,7 @@ preview-manager.sh gc
 preview-manager.sh ensure-capacity [slug]
 preview-manager.sh running-count
 preview-manager.sh gate [slug]
+preview-manager.sh limits
 EOF
   exit 1
 }
@@ -308,6 +310,11 @@ cmd_running_count() {
   active_slugs | grep -c . || true
 }
 
+cmd_limits() {
+  printf 'preview-max: %s\n' "$PREVIEW_MAX"
+  printf 'preview-ttl-minutes: %s\n' "$PREVIEW_TTL_MINUTES"
+}
+
 cmd_gc() {
   ensure_registry
   registry_prune_missing
@@ -399,5 +406,6 @@ case "$action" in
   ensure-capacity) cmd_ensure_capacity "${1:-}" ;;
   running-count) cmd_running_count ;;
   gate) cmd_gate "${1:-}" ;;
+  limits) cmd_limits ;;
   *) usage ;;
 esac
