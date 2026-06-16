@@ -20,6 +20,7 @@ const SESSION_ENTRY_SCRIPT = join(WORKSPACE_ROOT, "scripts/project-session-entry
 const WORKFLOW_REPORT_SCRIPT = join(WORKSPACE_ROOT, "scripts/workflow-report.sh");
 const PREVIEW_STATUS_SCRIPT = join(WORKSPACE_ROOT, "scripts/project-preview-status.sh");
 const PREVIEW_SCRIPT = join(WORKSPACE_ROOT, "scripts/project-preview.sh");
+const PREVIEW_MANAGER_SCRIPT = join(WORKSPACE_ROOT, "scripts/preview-manager.sh");
 const ROUTING_TEMPLATE_FILE = join(WORKSPACE_ROOT, "docs", "webgen-routing-message-templates.md");
 const ERROR_HANDLING_FILE = join(WORKSPACE_ROOT, "docs", "webgen-session-error-handling.md");
 const SOP_GATES_FILE = join(WORKSPACE_ROOT, "docs", "webgen-sop-and-gates.md");
@@ -337,6 +338,331 @@ test("project preview failure output stays compact when dev process exits early"
     assert.equal(output.includes("tail -n 20"), false);
   } finally {
     rmSync(join(WORKSPACE_ROOT, "projects", slug), { recursive: true, force: true });
+  }
+});
+
+test("preview manager supports registry controls and respects pinned previews", () => {
+  const keepSlug = `preview-keep-${Date.now()}`;
+  const pinnedSlug = `preview-pin-${Date.now()}`;
+
+  try {
+    execFileSync("sh", ["scripts/project-init.sh", keepSlug, "vite-page"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    execFileSync("sh", ["scripts/project-init.sh", pinnedSlug, "vite-page"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    const keepRoot = join(WORKSPACE_ROOT, "projects", keepSlug);
+    const pinnedRoot = join(WORKSPACE_ROOT, "projects", pinnedSlug);
+
+    writeFileSync(join(keepRoot, ".webgen", "preview.pid"), `99991\n`);
+    writeFileSync(join(pinnedRoot, ".webgen", "preview.pid"), `99992\n`);
+
+    execFileSync("node", ["-e", `
+      const fs=require("fs");
+      const now=new Date().toISOString();
+      for (const file of process.argv.slice(1)) {
+        const data=JSON.parse(fs.readFileSync(file,"utf8"));
+        data.preview.port = (data.project.slug.includes("pin-") ? 4312 : 4311);
+        data.preview.healthcheck = "http://127.0.0.1:" + data.preview.port + "/";
+        data.preview.state = { ...(data.preview.state||{}), status:"running", pid:(data.project.slug.includes("pin-") ? 99992 : 99991), startedAt:now, readyAt:now, lastError:null };
+        fs.writeFileSync(file, JSON.stringify(data, null, 2) + "\\n");
+      }
+    `, join(keepRoot, ".webgen", "config.json"), join(pinnedRoot, ".webgen", "config.json")], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    const pinOutput = execFileSync("zsh", [PREVIEW_MANAGER_SCRIPT, "pin", pinnedSlug], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    assert.match(pinOutput, /pinned:/);
+
+    const listOutput = execFileSync("zsh", [PREVIEW_MANAGER_SCRIPT, "list"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    assert.match(listOutput, /PIN/);
+    assert.match(listOutput, new RegExp(`${pinnedSlug}.*pinned`, "i"));
+
+    const stopOthersOutput = execFileSync("zsh", [PREVIEW_MANAGER_SCRIPT, "stop-others", keepSlug], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    assert.match(stopOthersOutput, /Kept running:/);
+
+    const keepState = JSON.parse(execFileSync("cat", [join(keepRoot, ".webgen", "config.json")], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    }));
+    const pinnedState = JSON.parse(execFileSync("cat", [join(pinnedRoot, ".webgen", "config.json")], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    }));
+
+    assert.equal(keepState.preview.state.status, "running");
+    assert.equal(pinnedState.preview.state.status, "running");
+
+    const unpinOutput = execFileSync("zsh", [PREVIEW_MANAGER_SCRIPT, "unpin", pinnedSlug], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    assert.match(unpinOutput, /unpinned:/);
+
+    const gcOutput = execFileSync("zsh", [PREVIEW_MANAGER_SCRIPT, "gc"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    assert.match(gcOutput, /GC/);
+
+    const capacityOutput = execFileSync("zsh", [PREVIEW_MANAGER_SCRIPT, "ensure-capacity", keepSlug], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    assert.match(capacityOutput, /capacity:/);
+  } finally {
+    rmSync(join(WORKSPACE_ROOT, "projects", keepSlug), { recursive: true, force: true });
+    rmSync(join(WORKSPACE_ROOT, "projects", pinnedSlug), { recursive: true, force: true });
+  }
+});
+
+test("project preview enforces capacity by stopping stale unpinned previews before launch", () => {
+  const oldSlug = `preview-old-${Date.now()}`;
+  const recentSlug = `preview-recent-${Date.now()}`;
+  const targetSlug = `preview-target-${Date.now()}`;
+
+  try {
+    for (const slug of [oldSlug, recentSlug, targetSlug]) {
+      execFileSync("sh", ["scripts/project-init.sh", slug, "vite-page"], {
+        cwd: WORKSPACE_ROOT,
+        encoding: "utf8"
+      });
+    }
+
+    const oldRoot = join(WORKSPACE_ROOT, "projects", oldSlug);
+    const recentRoot = join(WORKSPACE_ROOT, "projects", recentSlug);
+
+    writeFileSync(join(oldRoot, ".webgen", "preview.pid"), `99981\n`);
+    writeFileSync(join(recentRoot, ".webgen", "preview.pid"), `99982\n`);
+
+    execFileSync("node", ["-e", `
+      const fs=require("fs");
+      const now=new Date().toISOString();
+      for (const file of process.argv.slice(1)) {
+        const data=JSON.parse(fs.readFileSync(file,"utf8"));
+        data.preview.port = data.project.slug.includes("old-") ? 4411 : 4412;
+        data.preview.healthcheck = "http://127.0.0.1:" + data.preview.port + "/";
+        data.preview.state = { ...(data.preview.state||{}), status:"running", pid:(data.project.slug.includes("old-") ? 99981 : 99982), startedAt:now, readyAt:now, lastError:null };
+        fs.writeFileSync(file, JSON.stringify(data, null, 2) + "\\n");
+      }
+    `, join(oldRoot, ".webgen", "config.json"), join(recentRoot, ".webgen", "config.json")], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    execFileSync("zsh", [PREVIEW_MANAGER_SCRIPT, "touch", oldSlug], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    execFileSync("zsh", [PREVIEW_MANAGER_SCRIPT, "touch", recentSlug], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    execFileSync("node", ["-e", `
+      const fs=require("fs");
+      const file=process.argv[1];
+      const data=JSON.parse(fs.readFileSync(file,"utf8"));
+      data.items = data.items.map((item) => {
+        if (item.slug.includes("old-")) item.lastSeenAt = "2026-01-01T00:00:00.000Z";
+        if (item.slug.includes("recent-")) item.lastSeenAt = "2026-06-16T00:00:00.000Z";
+        return item;
+      });
+      fs.writeFileSync(file, JSON.stringify(data, null, 2) + "\\n");
+    `, join(WORKSPACE_ROOT, ".openclaw", "preview-registry.json")], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    const result = spawnSync("sh", [PREVIEW_SCRIPT, targetSlug], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        WEBGEN_PREVIEW_GATE: "0",
+        WEBGEN_PREVIEW_MAX: "1"
+      }
+    });
+
+    assert.equal(result.status, 1);
+
+    const oldState = JSON.parse(execFileSync("cat", [join(oldRoot, ".webgen", "config.json")], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    }));
+    const recentState = JSON.parse(execFileSync("cat", [join(recentRoot, ".webgen", "config.json")], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    }));
+
+    assert.equal(oldState.preview.state.status, "stopped");
+    assert.equal(recentState.preview.state.status, "running");
+  } finally {
+    rmSync(join(WORKSPACE_ROOT, "projects", oldSlug), { recursive: true, force: true });
+    rmSync(join(WORKSPACE_ROOT, "projects", recentSlug), { recursive: true, force: true });
+    rmSync(join(WORKSPACE_ROOT, "projects", targetSlug), { recursive: true, force: true });
+  }
+});
+
+test("project preview stop removes tracked preview entry", () => {
+  const slug = `preview-stop-${Date.now()}`;
+
+  try {
+    execFileSync("sh", ["scripts/project-init.sh", slug, "vite-page"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    const projectRoot = join(WORKSPACE_ROOT, "projects", slug);
+    writeFileSync(join(projectRoot, ".webgen", "preview.pid"), `99971\n`);
+
+    execFileSync("node", ["-e", `
+      const fs=require("fs");
+      const now=new Date().toISOString();
+      const file=process.argv[1];
+      const data=JSON.parse(fs.readFileSync(file,"utf8"));
+      data.preview.port = 4511;
+      data.preview.healthcheck = "http://127.0.0.1:4511/";
+      data.preview.state = { ...(data.preview.state||{}), status:"running", pid:99971, startedAt:now, readyAt:now, lastError:null };
+      fs.writeFileSync(file, JSON.stringify(data, null, 2) + "\\n");
+    `, join(projectRoot, ".webgen", "config.json")], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    execFileSync("zsh", [PREVIEW_MANAGER_SCRIPT, "touch", slug], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    const stopOutput = execFileSync("zsh", ["scripts/project-preview-stop.sh", slug], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    assert.match(stopOutput, /Preview stopped/);
+
+    const config = JSON.parse(execFileSync("cat", [join(projectRoot, ".webgen", "config.json")], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    }));
+    assert.equal(config.preview.state.status, "stopped");
+
+    const registry = JSON.parse(execFileSync("cat", [join(WORKSPACE_ROOT, ".openclaw", "preview-registry.json")], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    }));
+    assert.equal(registry.items.some((item) => item.slug === slug), false);
+  } finally {
+    rmSync(join(WORKSPACE_ROOT, "projects", slug), { recursive: true, force: true });
+  }
+});
+
+test("workflow deliver stops other unpinned previews after delivery", () => {
+  const keepSlug = `deliver-keep-${Date.now()}`;
+  const stopSlug = `deliver-stop-${Date.now()}`;
+  const pinnedSlug = `deliver-pin-${Date.now()}`;
+
+  try {
+    for (const slug of [keepSlug, stopSlug, pinnedSlug]) {
+      execFileSync("sh", ["scripts/project-init.sh", slug, "vite-page"], {
+        cwd: WORKSPACE_ROOT,
+        encoding: "utf8"
+      });
+    }
+
+    const keepRoot = join(WORKSPACE_ROOT, "projects", keepSlug);
+    const stopRoot = join(WORKSPACE_ROOT, "projects", stopSlug);
+    const pinnedRoot = join(WORKSPACE_ROOT, "projects", pinnedSlug);
+
+    for (const [root, port, pid] of [
+      [keepRoot, 4611, 99961],
+      [stopRoot, 4612, 99962],
+      [pinnedRoot, 4613, 99963]
+    ]) {
+      writeFileSync(join(root, ".webgen", "preview.pid"), `${pid}\n`);
+      execFileSync("node", ["-e", `
+        const fs=require("fs");
+        const now=new Date().toISOString();
+        const file=process.argv[1];
+        const port=Number(process.argv[2]);
+        const pid=Number(process.argv[3]);
+        const data=JSON.parse(fs.readFileSync(file,"utf8"));
+        data.preview.port = port;
+        data.preview.healthcheck = "http://127.0.0.1:" + port + "/";
+        data.preview.state = { ...(data.preview.state||{}), status:"running", pid, startedAt:now, readyAt:now, lastError:null };
+        fs.writeFileSync(file, JSON.stringify(data, null, 2) + "\\n");
+      `, join(root, ".webgen", "config.json"), String(port), String(pid)], {
+        cwd: WORKSPACE_ROOT,
+        encoding: "utf8"
+      });
+    }
+
+    for (const slug of [keepSlug, stopSlug, pinnedSlug]) {
+      execFileSync("zsh", [PREVIEW_MANAGER_SCRIPT, "touch", slug], {
+        cwd: WORKSPACE_ROOT,
+        encoding: "utf8"
+      });
+    }
+    execFileSync("zsh", [PREVIEW_MANAGER_SCRIPT, "pin", pinnedSlug], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    execFileSync("node", ["-e", `
+      const fs=require("fs");
+      const stateFile=process.argv[1];
+      const verifyFile=process.argv[2];
+      const reviewFile=process.argv[3];
+      const state=JSON.parse(fs.readFileSync(stateFile,"utf8"));
+      state.currentStage = "design-review";
+      state.gates = { ...(state.gates||{}), proposal:"Pass", verification:"Pass", designReview:"Pass" };
+      fs.writeFileSync(stateFile, JSON.stringify(state, null, 2) + "\\n");
+      fs.writeFileSync(verifyFile, JSON.stringify({ status:"passed", checkedAt:new Date().toISOString(), items:{}, commands:[], notes:"ok" }, null, 2) + "\\n");
+      fs.writeFileSync(reviewFile, JSON.stringify({ status:"passed", checkedAt:new Date().toISOString(), notes:"ok" }, null, 2) + "\\n");
+    `, join(keepRoot, ".webgen", "workflow-state.json"), join(keepRoot, ".webgen", "checks", "verification.json"), join(keepRoot, ".webgen", "checks", "design-review.json")], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    execFileSync("sh", ["scripts/workflow-deliver.sh", keepSlug], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    const keepConfig = JSON.parse(execFileSync("cat", [join(keepRoot, ".webgen", "config.json")], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    }));
+    const stopConfig = JSON.parse(execFileSync("cat", [join(stopRoot, ".webgen", "config.json")], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    }));
+    const pinnedConfig = JSON.parse(execFileSync("cat", [join(pinnedRoot, ".webgen", "config.json")], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    }));
+
+    assert.equal(keepConfig.preview.state.status, "running");
+    assert.equal(stopConfig.preview.state.status, "stopped");
+    assert.equal(pinnedConfig.preview.state.status, "running");
+  } finally {
+    rmSync(join(WORKSPACE_ROOT, "projects", keepSlug), { recursive: true, force: true });
+    rmSync(join(WORKSPACE_ROOT, "projects", stopSlug), { recursive: true, force: true });
+    rmSync(join(WORKSPACE_ROOT, "projects", pinnedSlug), { recursive: true, force: true });
   }
 });
 

@@ -86,9 +86,15 @@ slug=demo
 ./scripts/project-preview-status.sh <slug> [--verbose]
 ./scripts/project-preview-stop.sh <slug>
 ./scripts/project-package.sh <slug>
+zsh ./scripts/preview-manager.sh list
+zsh ./scripts/preview-manager.sh pin <slug>
+zsh ./scripts/preview-manager.sh unpin <slug>
+zsh ./scripts/preview-manager.sh gc
 ```
 
 - `workflow-report.sh` 与 `project-preview-status.sh` 默认输出短摘要，只有显式加 `--verbose` 才输出排障细节。
+- `project-preview.sh` 启动前会自动做 `reap + gc + ensure-capacity`，优先回收旧预览、释放端口。
+- `workflow-deliver.sh` 完成后默认只保留当前项目预览，其它未 pin 预览会自动关闭。
 
 ## 当前实现约定
 
@@ -268,6 +274,10 @@ slug: demo-brand-site
 | 启动预览 | `project-preview.sh` |
 | 查询预览状态 | `project-preview-status.sh` |
 | 停止预览 | `project-preview-stop.sh` |
+| 查看预览总表 | `preview-manager.sh list` |
+| 固定保留预览 | `preview-manager.sh pin` |
+| 取消固定预览 | `preview-manager.sh unpin` |
+| 回收过期预览 | `preview-manager.sh gc` |
 | 打包构建 | `project-package.sh` |
 
 ---

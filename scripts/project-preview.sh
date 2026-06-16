@@ -4,6 +4,7 @@ set -eu
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 GUARD_SCRIPT="$SCRIPT_DIR/project-guard.sh"
+PREVIEW_MANAGER_SCRIPT="$SCRIPT_DIR/preview-manager.sh"
 
 usage() {
   echo "Usage: $0 <project-slug>" >&2
@@ -93,12 +94,24 @@ if [ -f "$PID_FILE" ]; then
   OLD_PID=$(cat "$PID_FILE")
   OLD_HEALTHCHECK=$(read_json_field "$CONFIG_JSON" "data.preview.healthcheck")
   if pid_alive "$OLD_PID" && curl -fsS "$OLD_HEALTHCHECK" >/dev/null 2>&1; then
+    zsh "$PREVIEW_MANAGER_SCRIPT" touch "$SLUG" >/dev/null 2>&1 || true
     printf 'Preview already running: %s\n' "$OLD_HEALTHCHECK"
     exit 0
   fi
 
   kill_pid "$OLD_PID"
   rm -f "$PID_FILE"
+fi
+
+zsh "$PREVIEW_MANAGER_SCRIPT" reap >/dev/null 2>&1 || true
+zsh "$PREVIEW_MANAGER_SCRIPT" gc >/dev/null 2>&1 || true
+CAPACITY_OUT=$(zsh "$PREVIEW_MANAGER_SCRIPT" ensure-capacity "$SLUG" 2>/dev/null) || CAPACITY_RC=$?
+if [ "${CAPACITY_RC:-0}" -eq 10 ]; then
+  emit_preview_blocked
+  if [ -n "$CAPACITY_OUT" ]; then
+    printf 'note: %s\n' "$CAPACITY_OUT" >&2
+  fi
+  exit 10
 fi
 
 if [ "${WEBGEN_PREVIEW_GATE:-1}" != "0" ]; then
@@ -169,6 +182,7 @@ PY
 
     if curl -fsS "$HEALTHCHECK" >/dev/null 2>&1; then
       node -e "const fs=require('fs'); const file=process.argv[1]; const pid=Number(process.argv[2]); const now=new Date().toISOString(); const data=JSON.parse(fs.readFileSync(file, 'utf8')); data.preview.state={...(data.preview.state||{}), status:'running', pid, readyAt:now, lastError:null}; data.envStatus.nodeInstalled=true; data.envStatus.lastCheckedAt=now; data.envStatus.lastPreviewAt=now; fs.writeFileSync(file, JSON.stringify(data, null, 2) + '\n');" "$CONFIG_JSON" "$PID"
+      zsh "$PREVIEW_MANAGER_SCRIPT" touch "$SLUG" >/dev/null 2>&1 || true
       printf 'Preview ready: %s\n' "$HEALTHCHECK"
       exit 0
     fi

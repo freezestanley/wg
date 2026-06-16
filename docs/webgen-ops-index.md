@@ -145,6 +145,10 @@
 | 启动预览 | `./scripts/project-preview.sh <slug>` |
 | 查看预览状态 | `./scripts/project-preview-status.sh <slug> [--verbose]` |
 | 停止预览 | `./scripts/project-preview-stop.sh <slug>` |
+| 查看预览总表 | `zsh ./scripts/preview-manager.sh list` |
+| 固定保留预览 | `zsh ./scripts/preview-manager.sh pin <slug>` |
+| 取消固定预览 | `zsh ./scripts/preview-manager.sh unpin <slug>` |
+| 回收过期预览 | `zsh ./scripts/preview-manager.sh gc` |
 | CDP 设计验收 | `./scripts/project-design-review.sh <slug>` |
 | 页面反模式检查 | `node scripts/page-design-guard.mjs <project-root>` |
 | 打包项目 | `./scripts/project-package.sh <slug>` |
