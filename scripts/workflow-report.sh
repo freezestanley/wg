@@ -26,16 +26,17 @@ STATE_FILE="$PROJECT_ROOT/.webgen/workflow-state.json"
 APPROVAL_FILE="$PROJECT_ROOT/.webgen/approval.json"
 VERIFICATION_FILE="$PROJECT_ROOT/.webgen/checks/verification.json"
 DELIVERY_FILE="$PROJECT_ROOT/.webgen/checks/delivery.json"
+DESIGN_REVIEW_FILE="$PROJECT_ROOT/.webgen/checks/design-review.json"
 
 [ -f "$STATE_FILE" ] || {
   echo "Workflow state not found: $STATE_FILE" >&2
   exit 1
 }
 
-node - "$SLUG" "$STATE_FILE" "$APPROVAL_FILE" "$VERIFICATION_FILE" "$DELIVERY_FILE" <<'NODE'
+node - "$SLUG" "$STATE_FILE" "$APPROVAL_FILE" "$VERIFICATION_FILE" "$DELIVERY_FILE" "$DESIGN_REVIEW_FILE" <<'NODE'
 const fs = require('fs');
 
-const [slug, stateFile, approvalFile, verificationFile, deliveryFile] = process.argv.slice(2);
+const [slug, stateFile, approvalFile, verificationFile, deliveryFile, designReviewFile] = process.argv.slice(2);
 
 const readJson = (file, fallback) => {
   try {
@@ -49,41 +50,33 @@ const state = readJson(stateFile, {});
 const approval = readJson(approvalFile, { confirmed: false, confirmedAt: null, summary: null });
 const verification = readJson(verificationFile, { status: 'pending', checkedAt: null, notes: null });
 const delivery = readJson(deliveryFile, { status: 'pending', checkedAt: null, missing: [], warnings: [] });
+const designReview = readJson(designReviewFile, { status: 'pending', checkedAt: null, notes: null });
 
 const gateOrder = [
   ['route', 'Route Gate'],
   ['session', 'Session Gate'],
-  ['scaffold', 'Scaffold Gate'],
-  ['discovery', 'Discovery Gate'],
-  ['assetInput', 'Asset Input Gate'],
   ['proposal', 'Proposal Gate'],
   ['implementation', 'Implementation Gate'],
   ['verification', 'Verification Gate'],
-  ['delivery', 'Delivery Gate']
+  ['designReview', 'Design Review Gate']
 ];
 
 const nextStepByStage = {
-  routing: ['完成项目路由，明确 slug / sessionKey / mode'],
-  'session-check': ['执行 session-lock check，确认 session 未串项目'],
-  init: ['完成模板初始化与 scaffold 校验'],
+  routing: ['完成项目路由与 session 对账'],
   discovery: ['补齐 Discovery 信息', '补齐输入素材收集'],
   proposal: ['输出方案并获得确认，或记录直接做例外'],
   implementation: ['继续页面实现', '补齐关键交互与四类状态'],
-  'asset-api-sync': ['同步 Assets / API / 文档', '确认素材与接口策略落地'],
   verification: ['执行 build / preview / scaffold 校验', '记录验证结果'],
-  delivery: ['整理交付说明', '确认 Delivery Gate 通过']
+  'design-review': ['执行页面实看与设计复核', '必要时继续优化一轮']
 };
 
 const gates = {
   route: 'Pending',
   session: 'Pending',
-  scaffold: 'Pending',
-  discovery: 'Pending',
-  assetInput: 'Pending',
   proposal: 'Pending',
   implementation: 'Pending',
   verification: 'Pending',
-  delivery: 'Pending',
+  designReview: 'Pending',
   ...(state.gates || {})
 };
 
@@ -95,11 +88,11 @@ const verificationStatus = verification.status !== 'pending'
     : gates.verification === 'Fail'
       ? 'failed-by-gate'
       : 'pending';
-const deliveryStatus = delivery.status !== 'pending'
-  ? delivery.status
-  : gates.delivery === 'Pass'
+const designReviewStatus = designReview.status !== 'pending'
+  ? designReview.status
+  : gates.designReview === 'Pass'
     ? 'passed-by-gate'
-    : gates.delivery === 'Fail'
+    : gates.designReview === 'Fail'
       ? 'failed-by-gate'
       : 'pending';
 const blockers = [];
@@ -115,7 +108,7 @@ lines.push(`- 当前阶段：${state.currentStage || 'unknown'}`);
 lines.push(`- 最近更新时间：${state.updatedAt || '未知'}`);
 lines.push(`- 方案确认：${approval.confirmed ? `已确认（${approval.confirmedAt || '时间未知'}）` : gates.proposal === 'Exception-Pass' ? '例外通过' : '待确认'}`);
 lines.push(`- 验证状态：${verificationStatus}`);
-lines.push(`- 交付状态：${deliveryStatus}`);
+lines.push(`- 设计复核：${designReviewStatus}`);
 lines.push('');
 lines.push('## Gates');
 for (const [key, label] of gateOrder) {
@@ -143,6 +136,11 @@ if (verification.notes) {
   lines.push('');
   lines.push('## Verification Notes');
   lines.push(`- ${verification.notes}`);
+}
+if (designReview.notes) {
+  lines.push('');
+  lines.push('## Design Review Notes');
+  lines.push(`- ${designReview.notes}`);
 }
 
 process.stdout.write(lines.join('\n') + '\n');

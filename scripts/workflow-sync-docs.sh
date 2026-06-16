@@ -29,15 +29,16 @@ STATE_FILE="$PROJECT_ROOT/.webgen/workflow-state.json"
 APPROVAL_FILE="$PROJECT_ROOT/.webgen/approval.json"
 VERIFICATION_FILE="$PROJECT_ROOT/.webgen/checks/verification.json"
 DELIVERY_FILE="$PROJECT_ROOT/.webgen/checks/delivery.json"
+DESIGN_REVIEW_FILE="$PROJECT_ROOT/.webgen/checks/design-review.json"
 
 [ -f "$STATE_FILE" ] || {
   echo "Workflow state not found: $STATE_FILE" >&2
   exit 1
 }
 
-node - "$PROJECT_FILE" "$HANDOFF_FILE" "$STATE_FILE" "$APPROVAL_FILE" "$VERIFICATION_FILE" "$DELIVERY_FILE" "$NOTE" <<'NODE'
+node - "$PROJECT_FILE" "$HANDOFF_FILE" "$STATE_FILE" "$APPROVAL_FILE" "$VERIFICATION_FILE" "$DELIVERY_FILE" "$DESIGN_REVIEW_FILE" "$NOTE" <<'NODE'
 const fs = require('fs');
-const [projectFile, handoffFile, stateFile, approvalFile, verificationFile, deliveryFile, note] = process.argv.slice(2);
+const [projectFile, handoffFile, stateFile, approvalFile, verificationFile, deliveryFile, designReviewFile, note] = process.argv.slice(2);
 
 const readJson = (file, fallback) => {
   try {
@@ -64,27 +65,24 @@ const nextStepByStage = {
   discovery: ['- 完成 Discovery', '- 输出方案并等待确认'],
   proposal: ['- 完成方案确认或记录直接做例外', '- 通过 Proposal Gate 后进入实现'],
   implementation: ['- 继续页面实现', '- 完成后进入 verification'],
-  'asset-api-sync': ['- 对齐素材 / API / 文档', '- 完成后进入 verification'],
   verification: ['- 完成预览/构建验证', '- 记录验证结果'],
-  delivery: ['- 整理交付说明', '- 正式交付项目']
+  'design-review': ['- 完成页面实看设计复核', '- 记录是否还需继续优化']
 };
 
 const state = readJson(stateFile, { currentStage: 'unknown', updatedAt: null, gates: {}, notes: {} });
 const gates = {
   route: 'Pending',
   session: 'Pending',
-  scaffold: 'Pending',
-  discovery: 'Pending',
-  assetInput: 'Pending',
   proposal: 'Pending',
   implementation: 'Pending',
   verification: 'Pending',
-  delivery: 'Pending',
+  designReview: 'Pending',
   ...(state.gates || {})
 };
 const approval = readJson(approvalFile, { confirmed: false });
 const verification = readJson(verificationFile, { status: 'pending', checkedAt: null, notes: null });
 const delivery = readJson(deliveryFile, { status: 'pending', checkedAt: null });
+const designReview = readJson(designReviewFile, { status: 'pending', checkedAt: null, notes: null });
 
 const approvalText = approval.confirmed
   ? `已确认（${approval.confirmedAt || '时间未知'}）`
@@ -104,14 +102,14 @@ const verificationText = verification.status === 'passed'
         ? '未通过 Verification Gate'
         : '待确认';
 
-const deliveryText = delivery.status === 'passed'
-  ? `已就绪（${delivery.checkedAt || '时间未知'}）`
-  : delivery.status === 'failed'
-    ? `未就绪（${delivery.checkedAt || '时间未知'}）`
-    : gates.delivery === 'Pass'
-      ? '已通过 Delivery Gate'
-      : gates.delivery === 'Fail'
-        ? '未通过 Delivery Gate'
+const designReviewText = designReview.status === 'passed'
+  ? `已完成（${designReview.checkedAt || '时间未知'}）`
+  : designReview.status === 'failed'
+    ? `未通过（${designReview.checkedAt || '时间未知'}）`
+    : gates.designReview === 'Pass'
+      ? '已通过 Design Review Gate'
+      : gates.designReview === 'Fail'
+        ? '未通过 Design Review Gate'
         : '待确认';
 
 if (fs.existsSync(projectFile)) {
@@ -120,18 +118,15 @@ if (fs.existsSync(projectFile)) {
     `- 当前阶段：\`${state.currentStage}\``,
     `- 方案确认：${approvalText}`,
     `- 验证状态：${verificationText}`,
-    `- 交付状态：${deliveryText}`
+    `- 设计复核：${designReviewText}`
   ].join('\n'));
   project = replaceSection(project, 'Gate 状态', [
     `- Route Gate：\`${gates.route}\``,
     `- Session Gate：\`${gates.session}\``,
-    `- Scaffold Gate：\`${gates.scaffold}\``,
-    `- Discovery Gate：\`${gates.discovery}\``,
-    `- Asset Input Gate：\`${gates.assetInput}\``,
     `- Proposal Gate：\`${gates.proposal}\``,
     `- Implementation Gate：\`${gates.implementation}\``,
     `- Verification Gate：\`${gates.verification}\``,
-    `- Delivery Gate：\`${gates.delivery}\``
+    `- Design Review Gate：\`${gates.designReview}\``
   ].join('\n'));
   project = replaceSection(project, '最近进展', [
     `- workflow 阶段已更新为 \`${state.currentStage}\`。`,
@@ -145,15 +140,14 @@ if (fs.existsSync(handoffFile)) {
   handoff = replaceSection(handoff, '当前状态', [
     `- workflow：\`${state.currentStage}\``,
     `- 方案确认：${approvalText}`,
-    `- 验证状态：${verificationText}`
+    `- 验证状态：${verificationText}`,
+    `- 设计复核：${designReviewText}`
   ].join('\n'));
   handoff = replaceSection(handoff, '当前 Workflow / Gates', [
     `- 当前阶段：\`${state.currentStage}\``,
-    `- Discovery Gate：\`${gates.discovery}\``,
-    `- Asset Input Gate：\`${gates.assetInput}\``,
     `- Proposal Gate：\`${gates.proposal}\``,
     `- Verification Gate：\`${gates.verification}\``,
-    `- Delivery Gate：\`${gates.delivery}\``
+    `- Design Review Gate：\`${gates.designReview}\``
   ].join('\n'));
   handoff = replaceSection(handoff, '最近改动', [
     note ? `- ${note}` : '- workflow 状态已同步',

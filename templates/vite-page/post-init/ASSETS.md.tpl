@@ -34,9 +34,11 @@
 - 当前状态：`Blocking`
 - 缺失素材是否阻塞最终实现：待确认
 
-## Gate 状态
+## 执行状态
 
-- Asset Input Gate：`Pending`
+- Proposal Gate：`Pending`
+- Verification Gate：`Pending`
+- Design Review Gate：`Pending`
 
 ## 复用决策
 

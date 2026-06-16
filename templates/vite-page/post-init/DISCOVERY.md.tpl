@@ -15,12 +15,38 @@
 ## Design Read
 
 - 页面类型 / 受众 / 风格语言 / 设计体系：待确认
+- Atmosphere Layer：`none / subtle / signature`，待确认
 
 ## 风格档位
 
 - DESIGN_VARIANCE：待确认
 - MOTION_INTENSITY：待确认
 - VISUAL_DENSITY：待确认
+
+## 氛围层策略
+
+- Atmosphere Layer：待确认
+- 是否需要持续背景特效（火焰 / 粒子 / 原子 / 流体 / 光效等）：待确认
+- 作用位置（仅 Hero / 局部区块 / 全页背景）：待确认
+- 作用目标（烘托气氛 / 强化品牌 / 推动叙事 / 强化发布感）：待确认
+- 移动端 / 低性能设备降级策略：待确认
+
+## 页面方向摘要
+
+- 首版页面气质：待确认
+- 记忆点：待确认
+- 主视觉策略：待确认
+- 主要 CTA / 主行为：待确认
+
+## 审版检查点
+
+- 首屏焦点：待确认
+- 首屏是否 3 秒内看出主题与主行为：待确认
+- 证明区策略（案例 / 数据 / 规格 / 信任背书）：待确认
+- 内容节奏（轻 / 中 / 强叙事）：待确认
+- CTA 收口方式：待确认
+- H5 首屏优先级：待确认
+- 明确禁止的模板味 / 竞品味：待确认
 
 ## 页面结构
 
@@ -116,11 +142,11 @@
 
 - 待确认
 
-## 状态门
+## 执行状态
 
-- Discovery Gate：`Pending`
-- Asset Input Gate：`Pending`
 - Proposal Gate：`Pending`
+- Verification Gate：`Pending`
+- Design Review Gate：`Pending`
 
 ## 适配检查清单
 

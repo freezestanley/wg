@@ -29,12 +29,30 @@
 
 ## 1. 先问这 8 件事
 
-默认高审美页面设计流程速记：
-1. `design-taste-frontend` 生成初始蓝图
-2. `impeccable audit` 做全面质量审查
-3. 根据问题调用 `arrange / typeset / colorize / polish / animate / harden`
-4. 风格稳定后，在 `skills/impeccable` 体系内用 `teach-impeccable` 记住风格
-5. 最终用 CDP 实看页面验收
+默认高质量页面设计流程速记：
+1. 在 `DISCOVERY.md` 写 `Design Read`
+2. 定 `DESIGN_VARIANCE / MOTION_INTENSITY / VISUAL_DENSITY`
+3. 定 `Atmosphere Layer`：`none / subtle / signature`
+4. 回答“老板审版五问”
+5. 先做首版页面骨架与视觉方向
+6. 做一次实际预览验证
+7. 做一次页面实看设计复核，必要时再优化一轮
+
+老板审版五问：
+- 首屏 3 秒能否看懂主题与主行为？
+- 是否只有一个主焦点？
+- 证明区是否可信？
+- 内容节奏是否避免同构重复？
+- CTA 收口是否明确？
+
+开工前硬检查：
+- 上面 5 项必须写进 `DISCOVERY.md`
+- 缺少这些结论时，不应直接进入页面实现
+
+进入设计复核前再补一层：
+- 页面源码应通过反模式检查
+- 默认至少检查 Hero、Proof、CTA、三等分卡片反模式
+- 额外检查 Hero 是否缺价值说明 / 首屏 CTA，以及 CTA 文案是否过泛
 
 1. 这是新页面还是旧页面改版？
 2. 页面目标是什么：转化 / 展示 / 品牌 / 效率 / 叙事？
@@ -50,6 +68,7 @@
 - 目标用户 / 使用场景
 - 主要板块与信息层级
 - 设计拨盘：`DESIGN_VARIANCE / MOTION_INTENSITY / VISUAL_DENSITY`
+- 氛围层：`Atmosphere Layer = none / subtle / signature`
 - 配色 / 字体 / 图标方向
 - 素材 / 文案 / 接口来源与缺口
 - 技术实现与依赖策略
@@ -130,6 +149,16 @@
 - 叙事型官网
 - 品牌展示与产品发布页
 
+### 什么时候提高 Atmosphere Layer
+- 需要烘托世界观或情绪
+- Hero 本身承担叙事或发布会气质
+- 用户明确要求火焰、粒子、原子、流体等持续背景特效
+
+### 什么时候压低 Atmosphere Layer
+- SaaS 工具页
+- 表单 / 登录 / 配置类页面
+- 内容可读性优先、移动端性能预算紧
+
 ### 什么时候提高 VISUAL_DENSITY
 - Dashboard
 - 数据面板
@@ -145,15 +174,16 @@
 ## 4. 默认审美判断
 
 ### 默认流程分工
-- 初始蓝图：`design-taste-frontend`
-- 全面体检：`impeccable audit`
+- 页面方向：`Design Read` + 三档位
+- 氛围判断：`Atmosphere Layer`
+- 首版骨架：页面实现本身
+- 质量体检：`audit`
 - 间距节奏：`arrange`
 - 字体层级：`typeset`
 - 配色重塑：`colorize`
 - 细节收口：`polish`
 - 动效增强：`animate`
 - 稳定性加固：`harden`
-- 风格记忆：`teach-impeccable`（属于 `skills/impeccable` 内）
 
 ### 要主动避免
 - 居中大标题 + 按钮 + 三张等宽卡片
@@ -319,7 +349,7 @@
 | `hooks <on\|off\|status|...>` | Manage | 管理设计检测 hook |
 
 当前 webgen 默认最常用链路：
-- `impeccable audit`
+- `audit`
 - `arrange（对应 impeccable 的 layout 能力）/ typeset / colorize / polish / animate / harden`
 - 风格稳定后在 `skills/impeccable` 体系内用 `teach-impeccable`
 

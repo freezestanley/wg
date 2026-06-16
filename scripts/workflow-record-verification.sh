@@ -45,7 +45,7 @@ VERIFICATION_FILE="$PROJECT_ROOT/.webgen/checks/verification.json"
 }
 
 CURRENT_STAGE=$(node -e 'const fs=require("fs"); const d=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); process.stdout.write(d.currentStage);' "$STATE_FILE")
-if [ "$CURRENT_STAGE" = "implementation" ] || [ "$CURRENT_STAGE" = "asset-api-sync" ]; then
+if [ "$CURRENT_STAGE" = "implementation" ]; then
   sh "$TRANSITION_SCRIPT" "$SLUG" verification >/dev/null
 fi
 
@@ -71,10 +71,10 @@ NODE
 
 if [ "$STATUS" = "passed" ]; then
   sh "$SET_GATE_SCRIPT" "$SLUG" verification Pass "$NOTES" >/dev/null
-  sh "$SET_GATE_SCRIPT" "$SLUG" delivery Pending "验证已通过，待最终交付自检" >/dev/null
+  sh "$SET_GATE_SCRIPT" "$SLUG" designReview Pending "验证已通过，待页面实看设计复核" >/dev/null
 else
   sh "$SET_GATE_SCRIPT" "$SLUG" verification Fail "$NOTES" >/dev/null
-  sh "$SET_GATE_SCRIPT" "$SLUG" delivery Fail "验证失败，禁止进入交付" >/dev/null
+  sh "$SET_GATE_SCRIPT" "$SLUG" designReview Pending "验证未通过，需回到实现修复" >/dev/null
 fi
 
 CURRENT_STAGE=$(node -e 'const fs=require("fs"); const d=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); process.stdout.write(d.currentStage);' "$STATE_FILE")

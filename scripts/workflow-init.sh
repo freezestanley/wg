@@ -28,6 +28,7 @@ STATE_FILE="$WEBGEN_ROOT/workflow-state.json"
 APPROVAL_FILE="$WEBGEN_ROOT/approval.json"
 VERIFICATION_FILE="$CHECKS_ROOT/verification.json"
 DELIVERY_FILE="$CHECKS_ROOT/delivery.json"
+DESIGN_REVIEW_FILE="$CHECKS_ROOT/design-review.json"
 SCAFFOLD_FILE="$CHECKS_ROOT/scaffold.json"
 SCOPE_FILE="$WEBGEN_ROOT/write-scope.json"
 SET_GATE_SCRIPT="$SCRIPT_DIR/workflow-set-gate.sh"
@@ -51,24 +52,19 @@ const data = {
   updatedAt: now,
   gates: {
     route: 'Pass',
-    session: 'Pass',
-    scaffold: 'Pass',
-    discovery: 'Pending',
-    assetInput: 'Pending',
+    session: 'Pending',
     proposal: 'Pending',
     implementation: 'Pending',
     verification: 'Pending',
-    delivery: 'Pending'
+    designReview: 'Pending'
   },
   notes: {
     route: '项目已完成路由进入当前 project session',
-    session: 'session lock 已自检通过或待 init 后写入',
-    scaffold: '项目模板初始化完成并通过基础校验'
+    session: '待 session-lock 对账',
+    proposal: '待方案确认或记录直接做例外'
   },
   history: [
     { stage: 'routing', at: now, by: 'workflow-init' },
-    { stage: 'session-check', at: now, by: 'workflow-init' },
-    { stage: 'init', at: now, by: 'workflow-init' },
     { stage: 'discovery', at: now, by: 'workflow-init' }
   ]
 };
@@ -101,7 +97,15 @@ if [ ! -f "$DELIVERY_FILE" ]; then
     '  "checkedAt": null,' \
     '  "missing": [],' \
     '  "warnings": []' \
-    '}' > "$DELIVERY_FILE"
+  '}' > "$DELIVERY_FILE"
+fi
+
+if [ ! -f "$DESIGN_REVIEW_FILE" ]; then
+  printf '%s\n' '{' \
+    '  "status": "pending",' \
+    '  "checkedAt": null,' \
+    '  "notes": null' \
+    '}' > "$DESIGN_REVIEW_FILE"
 fi
 
 if [ ! -f "$SCAFFOLD_FILE" ]; then
@@ -141,15 +145,6 @@ if [ ! -f "$SCOPE_FILE" ]; then
       "src/",
       "docs/api/"
     ],
-    "asset-api-sync": [
-      "PROJECT.md",
-      "DISCOVERY.md",
-      "ASSETS.md",
-      "API.md",
-      "HANDOFF.md",
-      "src/",
-      "docs/api/"
-    ],
     "verification": [
       "PROJECT.md",
       "DISCOVERY.md",
@@ -159,12 +154,13 @@ if [ ! -f "$SCOPE_FILE" ]; then
       "src/",
       "docs/api/"
     ],
-    "delivery": [
+    "design-review": [
       "PROJECT.md",
       "DISCOVERY.md",
       "ASSETS.md",
       "API.md",
       "HANDOFF.md",
+      "src/",
       "docs/api/"
     ]
   }
@@ -173,7 +169,6 @@ EOF
 fi
 
 sh "$SET_GATE_SCRIPT" "$SLUG" route Pass "项目已完成路由进入当前 project session" >/dev/null
-sh "$SET_GATE_SCRIPT" "$SLUG" session Pass "session lock 已自检通过或待 init 后写入" >/dev/null
-sh "$SET_GATE_SCRIPT" "$SLUG" scaffold Pass "项目模板初始化完成并通过基础校验" >/dev/null
+sh "$SET_GATE_SCRIPT" "$SLUG" session Pending "待 session-lock 对账" >/dev/null
 
 echo "WORKFLOW INIT OK: $SLUG"

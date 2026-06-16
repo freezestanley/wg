@@ -17,10 +17,10 @@
 看：`docs/webgen-sop-and-gates.md`
 
 适用问题：
-- 当前完整 SOP 到底分几步
-- Workflow stage 和 Gate 怎么对应
-- Discovery 里的输入素材门应该怎么收
+- 当前主流程到底分几步
+- 最小可执行 Gate 怎么对应
 - 什么时候能开工，什么时候必须阻塞
+- 页面完成后如何收口验证和设计复核
 
 ### 2. 想知道页面设计、配图、资源与验收规则
 看：`docs/webgen-design-guide.md`
@@ -122,7 +122,7 @@
 2. 再看 `docs/webgen-sop-and-gates.md` 对照当前 stage / gate
 3. 出方案前看 `docs/webgen-design-cheatsheet.md`
 4. 需要完整规则时看 `docs/webgen-design-guide.md`
-5. 若是 landing / 营销站 / 作品集 / 重设计类，先形成 `Design Read` 和三档位
+5. 若是 landing / 营销站 / 作品集 / 重设计类，先形成 `Design Read`、三档位和老板审版五问
 6. 若复杂或大需求，先走 `superpowers` plan，再拆子任务
 7. 若要用真实配图，把来源、用途、校验状态写入 `ASSETS.md`
 8. 交付前按 `docs/webgen-design-guide.md` 的验收项收口
@@ -143,6 +143,8 @@
 | 启动预览 | `./scripts/project-preview.sh <slug>` |
 | 查看预览状态 | `./scripts/project-preview-status.sh <slug>` |
 | 停止预览 | `./scripts/project-preview-stop.sh <slug>` |
+| CDP 设计验收 | `./scripts/project-design-review.sh <slug>` |
+| 页面反模式检查 | `node scripts/page-design-guard.mjs <project-root>` |
 | 打包项目 | `./scripts/project-package.sh <slug>` |
 
 ---
@@ -157,7 +159,8 @@
 | 需要看模板默认能力 | `templates/vite-page/TEMPLATE.md` |
 | 需要确认真实配图与素材策略 | `AGENTS.md` 的 `SO-007` + `docs/webgen-design-guide.md` |
 | 需要确认默认 CDN 与资源策略 | `AGENTS.md` 的 `SO-008` + `docs/webgen-design-guide.md` |
-| 需要确认 `Design Read` / taste-skill / 规划流程 | `AGENTS.md` 的 `SO-009` + `docs/webgen-design-guide.md` |
+| 需要确认 `Design Read` / 设计执行链 / 规划流程 | `AGENTS.md` 的 `SO-009` + `docs/webgen-design-guide.md` |
+| 需要确认生成前的设计硬检查 | `templates/vite-page/TEMPLATE.md` + `scripts/workflow-check.sh` |
 | 需要查变更背景 | `docs/webgen-skill-change-log.md` |
 
 ---

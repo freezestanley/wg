@@ -24,7 +24,7 @@ case "$SLUG" in
 esac
 
 case "$NEXT_STAGE" in
-  routing|session-check|init|discovery|proposal|implementation|asset-api-sync|verification|delivery) ;;
+  routing|discovery|proposal|implementation|verification|design-review) ;;
   *)
     echo "Invalid next stage: $NEXT_STAGE" >&2
     exit 1
@@ -46,27 +46,21 @@ const data = JSON.parse(fs.readFileSync(file, 'utf8'));
 const defaultGates = {
   route: 'Pending',
   session: 'Pending',
-  scaffold: 'Pending',
-  discovery: 'Pending',
-  assetInput: 'Pending',
   proposal: 'Pending',
   implementation: 'Pending',
   verification: 'Pending',
-  delivery: 'Pending'
+  designReview: 'Pending'
 };
 data.gates = { ...defaultGates, ...(data.gates || {}) };
 data.notes = data.notes || {};
 const currentStage = data.currentStage;
 const allowed = {
-  routing: ['session-check'],
-  'session-check': ['init'],
-  init: ['discovery'],
+  routing: ['discovery'],
   discovery: ['proposal'],
   proposal: ['implementation'],
-  implementation: ['asset-api-sync', 'verification'],
-  'asset-api-sync': ['implementation', 'verification'],
-  verification: ['implementation', 'delivery'],
-  delivery: []
+  implementation: ['verification'],
+  verification: ['implementation', 'design-review'],
+  'design-review': ['implementation']
 };
 if (!allowed[currentStage]) {
   console.error(`Unknown current stage: ${currentStage}`);
@@ -90,8 +84,7 @@ NODE
 
 case "$NEXT_STAGE" in
   discovery)
-    sh "$SET_GATE_SCRIPT" "$SLUG" discovery Pending "已进入 discovery 阶段，待完成信息收集" >/dev/null
-    sh "$SET_GATE_SCRIPT" "$SLUG" assetInput Pending "待完成输入素材收集" >/dev/null
+    sh "$SET_GATE_SCRIPT" "$SLUG" session Pending "待完成 session 对账或项目初始化后的锁定" >/dev/null
     ;;
   proposal)
     sh "$SET_GATE_SCRIPT" "$SLUG" proposal Pending "已进入 proposal 阶段，待确认方案或记录例外" >/dev/null
@@ -99,13 +92,10 @@ case "$NEXT_STAGE" in
   implementation)
     sh "$SET_GATE_SCRIPT" "$SLUG" implementation Pending "已进入 implementation 阶段，待完成页面主体与交互" >/dev/null
     ;;
-  asset-api-sync)
-    sh "$SET_GATE_SCRIPT" "$SLUG" implementation Pending "已进入 asset-api-sync，待对齐素材/API/文档" >/dev/null
-    ;;
   verification)
     sh "$SET_GATE_SCRIPT" "$SLUG" verification Pending "已进入 verification 阶段，待完成实际验证" >/dev/null
     ;;
-  delivery)
-    sh "$SET_GATE_SCRIPT" "$SLUG" delivery Pending "已进入 delivery 阶段，待完成最终交付说明" >/dev/null
+  design-review)
+    sh "$SET_GATE_SCRIPT" "$SLUG" designReview Pending "已进入 design-review 阶段，待完成页面实看复核" >/dev/null
     ;;
 esac

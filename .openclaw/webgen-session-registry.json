@@ -1,8 +1,3 @@
 {
-  "login-page-h5": "agent:webgen:proj-login-page-h5",
-  "watch-product-page": "agent:webgen:proj-watch-product-page",
-  "phone-product-page": "agent:webgen:proj-phone-product-page",
-  "agent-management-system": "agent:webgen:proj-agent-management-system",
-  "huo-zhe-yan": "agent:webgen:proj-huo-zhe-yan",
-  "resident-evil-horror-site": "agent:webgen:proj-resident-evil-horror-site"
+  "biohazard-horror": "agent:webgen:proj-biohazard-horror"
 }

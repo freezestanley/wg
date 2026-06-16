@@ -345,7 +345,9 @@
 - 先由 `design-taste-frontend` 生成初始蓝图
 - 形成一行 `Design Read`
 - 明确 `DESIGN_VARIANCE / MOTION_INTENSITY / VISUAL_DENSITY`
+- 明确 `Atmosphere Layer`：`none / subtle / signature`
 - 将初始蓝图摘要写入 `DISCOVERY.md`
+- 补一组“老板审版五问”结论：首屏焦点、3 秒理解、证明区可信度、内容节奏、CTA 收口
 
 ### 阶段 D：初始蓝图生成
 
@@ -353,13 +355,32 @@
 - 页面结构到区块级布局骨架
 - 首屏与关键区块层级说明
 - 非对称 / 节奏化布局策略
+- 气氛层策略：是否需要持续背景特效、作用范围、前后景层级
 - 微交互方向与动效触发点
 - PC / Pad / H5 的落地差异
 - 禁止退化成模板味的实现警戒项
 
-### 阶段 E：全面质量审查
+### 阶段 D1：老板审版五问
 
-完成初始蓝图或首版页面后，必须执行 `impeccable audit`，至少检查：
+在进入最终实现前，至少回答清楚这五个问题：
+- 首屏 3 秒内能不能看出页面主题、对象和主行为
+- 页面是否只有一个主焦点，而不是多中心抢戏
+- 证明区是否成立：案例 / 数据 / 规格 / 信任背书是否足够
+- 内容节奏是否有松紧变化，避免一整页同构区块
+- CTA 收口是否明确自然，而不是最后机械放一个按钮
+
+这些问题的答案必须写进 `DISCOVERY.md`。提升交付设计质量的主手段，是生成前把这组结构判断做对，而不是依赖模板默认长相。
+
+进入设计复核前，还应做一次页面反模式检查。当前默认至少拦三类问题：
+- 缺少首屏 / Hero 焦点
+- 缺少证明区 / 信任区
+- 缺少 CTA，或直接落回三等分卡片模板
+- Hero 区块缺少价值说明，且没有首屏内主 CTA
+- CTA 文案过泛，例如“了解更多 / Read more”
+
+### 阶段 E：页面质量体检
+
+完成初始蓝图或首版页面后，至少做一次系统质检；可使用 `audit` 等能力，至少检查：
 - 可访问性
 - 响应式
 - 性能
@@ -370,7 +391,7 @@
 
 ### 阶段 F：精准精雕细琢
 
-根据 `audit` 报告，按问题类型进入专项优化：
+根据质检结果，按问题类型进入专项优化：
 - `arrange`：修复间距与视觉节奏
 - `typeset`：优化字重、字号、层级、行高与阅读体验
 - `colorize`：重塑更科学、和谐的配色
@@ -385,12 +406,13 @@
 - 是否需要新增依赖
 - 若新增依赖，先检查 `package.json`，不能想当然直接引用
 - 是用原生实现、组件动效、时间线动效，还是 3D 特效
+- 若存在氛围型背景特效，必须明确它属于 `none / subtle / signature` 的哪一级，以及移动端降级方案
 
 ### 阶段 H：skill 选择
 
 推荐职责分工：
 - 初始蓝图与布局骨架：`design-taste-frontend`
-- 全面体检：`impeccable audit`
+- 页面体检：`audit`
 - 专项优化：`arrange / typeset / colorize / polish / animate / harden`
 - 风格沉淀：`teach-impeccable`（位于 `skills/impeccable` 体系内）
 - 页面结构与实现：`frontend-design`
@@ -424,6 +446,7 @@
 - 至少检查 PC 与 H5 视口；需要时补 Pad
 - 若发现布局、排版、色彩、动效或稳健性问题，回到对应的 `arrange / typeset / colorize / polish / animate / harden` 环节继续优化
 - 未完成 CDP 实看验收，不得宣称“验证完成”
+- CDP 验收优先将截图落盘到项目内，并只输出紧凑报告与文件路径，避免把大截图直接塞进对话上下文
 
 ### 阶段 K：交付
 
@@ -448,13 +471,14 @@
 - 所有 landing page / 营销站 / 作品集 / 重设计类页面，进入最终页面实现前必须先由该 skill 输出初始蓝图
 - 写任何页面代码前，先产出一行 `Design Read`
 - 再根据 `Design Read` 确定 `DESIGN_VARIANCE / MOTION_INTENSITY / VISUAL_DENSITY`
-- 将 `Design Read`、三档位结论与初始蓝图摘要写入 `DISCOVERY.md`
+- 再声明 `Atmosphere Layer`：`none / subtle / signature`
+- 将 `Design Read`、三档位结论、`Atmosphere Layer` 与初始蓝图摘要写入 `DISCOVERY.md`
 
 ### 6.2 `impeccable`
 
 作用：
-- 作为默认的全面质量审查与专项优化主轴
-- 先用 `audit` 做专业体检，再根据问题调用 `arrange / typeset / colorize / polish / animate / harden`
+- 作为可选的质量体检与专项优化工具箱
+- 可先用 `audit` 做专业体检，再根据问题调用 `arrange / typeset / colorize / polish / animate / harden`
 - 在风格稳定后，可在其体系内使用 `teach-impeccable` 沉淀长期风格约束
 
 使用时机：
@@ -463,7 +487,7 @@
 - 项目风格已经清晰，希望记住风格以供后续复用
 
 强制要求：
-- 高审美页面默认必须至少做一次 `impeccable audit`
+- 高审美页面默认必须至少完成一次页面实看复核；若需要额外质检，可优先使用 `audit`
 - `audit` 后不能笼统说“优化一下”，应明确进入哪个专项环节
 - `teach-impeccable` 视为 `impeccable` 体系内的风格沉淀步骤，不单独脱离本流程使用
 
@@ -538,7 +562,7 @@
 推荐顺序：
 1. `superpowers`：理清需求、阶段与验证点
 2. `design-taste-frontend`：先出初始蓝图
-3. `impeccable audit`：做全面体检
+3. `audit`：做页面体检
 4. 按报告选择 `arrange / typeset / colorize / polish / animate / harden`
 5. `frontend-design`：把结构与区块落到真实页面方案
 6. 需要动效时，再按场景接 `Anime.js / Motion / gsap-*`
@@ -548,7 +572,7 @@
 
 推荐顺序：
 1. `design-taste-frontend`：先重做初始蓝图或版式方向
-2. `impeccable audit`：确认问题来自布局、排版、色彩还是细节
+2. `audit`：确认问题来自布局、排版、色彩还是细节
 3. 再按问题选择：`arrange / typeset / colorize / polish`
 4. 需要落代码结构调整时，再接 `frontend-design`
 5. 风格稳定后补 `teach-impeccable`
@@ -557,7 +581,7 @@
 
 推荐顺序：
 1. `design-taste-frontend`：先定初始蓝图与叙事节奏
-2. `impeccable audit`：先检查叙事与结构风险
+2. `audit`：先检查叙事与结构风险
 3. `gsap-core`：先定基础动画属性与 easing
 4. `gsap-timeline`：编排段落节奏
 5. `gsap-scrolltrigger`：接滚动驱动
@@ -571,14 +595,14 @@
 2. `design-taste-frontend`
 3. `frontend-design`
 4. 必要时补 `Motion`
-5. `impeccable audit`
+5. `audit`
 6. 再按问题选择 `arrange / typeset / colorize / polish / harden`
 
 ### 场景五：品牌页需要特效与记忆点
 
 推荐顺序：
 1. `design-taste-frontend`
-2. `impeccable audit`
+2. `audit`
 3. 根据问题先走 `arrange / typeset / colorize`
 4. 场景判断后选择：`Anime.js / Motion / gsap-* / Three.js`
 5. 若用 GSAP，按 `core → timeline / scrolltrigger → react → performance` 路由
@@ -903,7 +927,7 @@
 建议补充为硬性验收项：
 - 至少完成一次真实运行验证：本地预览、构建、或页面截图检查，而不是只看代码
 - 高审美页面必须用 CDP 实际访问页面完成设计验收，不接受仅凭代码或静态截图判断通过
-- 高审美页面必须至少经过一次 `impeccable audit` 与一轮对应专项优化；若不通过，必须继续优化后复验
+- 高审美页面必须至少经过一次页面实看设计复核；若体检或复核未通过，必须继续优化后复验
 - 若风格已经稳定，建议在 `skills/impeccable` 体系内执行 `teach-impeccable` 记住风格
 - 主流程涉及交互时，必须验证 `Loading / Empty / Error / Active` 至少 4 类状态
 - 主要交互元素必须验证键盘可达、可见焦点、可点击反馈

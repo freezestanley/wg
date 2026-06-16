@@ -6,6 +6,7 @@
 - 模板：`vite-page`
 - 模式：**单页面项目**
 - 技术栈：Vite + CDN 优先浏览器资源
+- 默认定位：高质量单页骨架，可继续演化为品牌页、营销页、专题页或产品页
 
 ## 当前目标
 
@@ -13,35 +14,31 @@
 
 ## Workflow 状态
 
-- 当前阶段：`routing`
+- 当前阶段：`discovery`
 - 方案确认：待确认
 - 验证状态：待确认
-- 交付状态：待确认
+- 设计复核：待确认
 
 ## Workflow 阶段流转
 
-- `routing` → `session-check` → `init` → `discovery` → `proposal` → `implementation` → `asset-api-sync` → `verification` → `delivery`
+- `routing` → `discovery` → `proposal` → `implementation` → `verification` → `design-review`
 
 ## Gate 状态
 
 - Route Gate：`Pending`
 - Session Gate：`Pending`
-- Scaffold Gate：`Pending`
-- Discovery Gate：`Pending`
-- Asset Input Gate：`Pending`
 - Proposal Gate：`Pending`
 - Implementation Gate：`Pending`
 - Verification Gate：`Pending`
-- Delivery Gate：`Pending`
+- Design Review Gate：`Pending`
 
-## Readiness / Gate Summary
+## 执行摘要
 
-- Discovery：待确认
-- Assets：待确认
-- API：待确认
-- Preview：待确认
-- Reuse Decision：待确认
-- Adaptation：待确认
+- 页面方向：待确认
+- 素材状态：待确认
+- 接口状态：待确认
+- 预览状态：待确认
+- 设计复核：待确认
 
 适配要求：
 
@@ -71,4 +68,4 @@
 
 ## 最近进展
 
-- 项目模板待初始化；初始化后进入 Discovery 与输入素材收集。
+- 项目骨架已初始化，下一步进入 Discovery、方案确认与首版页面方向定义。

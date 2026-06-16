@@ -2,27 +2,25 @@
 
 ## 当前状态
 
-- 项目已初始化
+- 项目已初始化，待完成 Discovery 与方案确认
 
 ## 当前 Workflow / Gates
 
 - 当前阶段：`discovery`
-- Discovery Gate：`Pending`
-- Asset Input Gate：`Pending`
 - Proposal Gate：`Pending`
 - Verification Gate：`Pending`
-- Delivery Gate：`Pending`
+- Design Review Gate：`Pending`
 
 ## 最近改动
 
-- 模板已落盘
+- 模板与项目骨架已落盘
 
 ## 下一步
 
 - 完成 Discovery
 - 完成输入素材收集（文案 / 图片 / API / 品牌 / 附件 / 交付）
-- 完成 Assets / API / Preview 信息收集
-- 完成复用决策
+- 输出方案并确认
+- 进入首版页面实现
 
 ## 预览命令
 
@@ -35,4 +33,4 @@
 ## 风险与注意事项
 
 - 未完成 Readiness Gate 前，不进入最终实现
-- 未通过 workflow gate，不允许进入交付
+- 未通过 verification / design-review，不允许宣称完成
