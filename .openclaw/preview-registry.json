@@ -1,3 +1,15 @@
 {
-  "items": []
+  "items": [
+    {
+      "slug": "admin-login",
+      "port": 4276,
+      "pid": "36844",
+      "healthcheck": "http://127.0.0.1:4276/",
+      "status": "running",
+      "startedAt": "2026-06-16T11:51:36.823Z",
+      "readyAt": "2026-06-16T11:51:37.931Z",
+      "lastSeenAt": "2026-06-16T11:51:38.020Z",
+      "pinned": false
+    }
+  ]
 }
