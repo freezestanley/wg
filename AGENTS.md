@@ -61,7 +61,8 @@
 - 页面设计默认先由 `design-taste-frontend` 生成初始蓝图与实现骨架；需要专项质检时，再按问题调用 `audit / arrange / typeset / colorize / polish / animate / harden`。核心目标是提升页面质量，而不是堆流程；主动规避 AI 模板味、紫蓝发光风、三等分功能卡片、滥用玻璃与阴影。
 - 交付级页面的强制环节是：至少完成一次实际预览验证、一次页面实看设计复核，并修完复核暴露的关键问题；`audit` 是推荐质检能力，不再是唯一强制入口。
 - 当项目风格逐渐稳定时，可在 `skills/impeccable` 体系内使用 `teach-impeccable` 记录风格约束，供后续迭代复用。
-- 所有高审美页面在宣称验证完成前，必须先通过 CDP 实际访问页面完成设计验收。
+- CDP 截图验证默认关闭跳过；只有用户明确要求截图验收时，才执行 CDP 访问与截图落盘。默认验收以实际预览验证与页面实看设计复核为准。
+- 当用户明确要求截图验收时，CDP 只尝试一次；若本次尝试失败，则记录为“截图验收已跳过”，不阻塞验证完成或交付完成。
 - 读取 skill 时，webgen 一律优先从 `workspace/skills/<skill-name>/SKILL.md` 读取；禁止拼接出重复的 workspace 绝对路径。若该目录不存在，再回退到系统提供的 skill 原始 location。
 - 所有 landing page / 营销站 / 作品集 / 重设计类页面，在进入最终页面实现前，必须先形成一行 `Design Read`，确定 `DESIGN_VARIANCE / MOTION_INTENSITY / VISUAL_DENSITY` 三档位，并声明 `Atmosphere Layer`（`none / subtle / signature`）；结论写入 `DISCOVERY.md`。
 - 默认必须补齐核心交互状态：`Loading / Empty / Error / Active Feedback`。

@@ -25,7 +25,7 @@ description: "重构设计流程：design-taste-frontend 出初始蓝图，Impec
    - 在项目推进过程中，如风格方向逐渐稳定，应允许在 `skills/impeccable` 体系内使用 `teach-impeccable` 记录风格与设计原则，作为后续迭代的长期约束。
 
 # 规则要求
-- 高审美页面仍保留：最终宣称“验证完成”前，必须用 CDP 实际访问页面完成设计验收。
+- 高审美页面仍保留：最终宣称“验证完成”前，必须完成页面实看设计复核；CDP 截图验收默认关闭，只有用户明确要截图时才执行。
 - 默认主导者改为 `design-taste-frontend` 负责初始蓝图。
 - `Impeccable` 成为默认的质量审查与专项优化主轴。
 - `teach-impeccable` 视为 `skills/impeccable` 内部的风格沉淀步骤，不单独脱离该体系描述。
@@ -34,4 +34,4 @@ description: "重构设计流程：design-taste-frontend 出初始蓝图，Impec
 # 推荐流程文案
 对高审美页面，默认流程心智改成：
 
-**先由 `design-taste-frontend` 产出初始蓝图，再用 `impeccable audit` 做全面体检，然后根据问题调用 `arrange / typeset / colorize / polish / animate / harden` 做专项优化；风格稳定后在 `skills/impeccable` 体系内用 `teach-impeccable` 记住风格；最终必须用 CDP 实看页面完成设计验收。**
+**先由 `design-taste-frontend` 产出初始蓝图，再用 `impeccable audit` 做全面体检，然后根据问题调用 `arrange / typeset / colorize / polish / animate / harden` 做专项优化；风格稳定后在 `skills/impeccable` 体系内用 `teach-impeccable` 记住风格；最终必须完成页面实看设计复核，只有用户明确要求截图时才追加 CDP 截图验收。**
