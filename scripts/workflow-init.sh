@@ -122,22 +122,17 @@ if [ ! -f "$SCOPE_FILE" ]; then
   "stages": {
     "discovery": [
       ".webgen/context-summary.txt",
-      "PROJECT.md",
-      "DISCOVERY.md",
-      "ASSETS.md",
-      "API.md",
-      "HANDOFF.md"
+      ".webgen/discovery-gap.txt",
+      "DISCOVERY.md"
     ],
     "proposal": [
       ".webgen/context-summary.txt",
-      "PROJECT.md",
-      "DISCOVERY.md",
-      "ASSETS.md",
-      "API.md",
-      "HANDOFF.md"
+      ".webgen/discovery-gap.txt",
+      "DISCOVERY.md"
     ],
     "implementation": [
       ".webgen/context-summary.txt",
+      ".webgen/discovery-gap.txt",
       "PROJECT.md",
       "DISCOVERY.md",
       "ASSETS.md",
@@ -150,6 +145,7 @@ if [ ! -f "$SCOPE_FILE" ]; then
     ],
     "verification": [
       ".webgen/context-summary.txt",
+      ".webgen/discovery-gap.txt",
       "PROJECT.md",
       "DISCOVERY.md",
       "ASSETS.md",
@@ -160,6 +156,7 @@ if [ ! -f "$SCOPE_FILE" ]; then
     ],
     "design-review": [
       ".webgen/context-summary.txt",
+      ".webgen/discovery-gap.txt",
       "PROJECT.md",
       "DISCOVERY.md",
       "ASSETS.md",

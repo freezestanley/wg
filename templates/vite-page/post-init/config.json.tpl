@@ -81,6 +81,9 @@
     },
     "blocking": true
   },
+  "review": {
+    "cdpScreenshotRequested": false
+  },
   "envStatus": {
     "nodeInstalled": false,
     "pythonInstalled": false,

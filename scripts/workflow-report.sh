@@ -70,7 +70,7 @@ const gateOrder = [
 
 const nextStepByStage = {
   routing: ['完成项目路由与 session 对账'],
-  discovery: ['补齐 Discovery 信息', '补齐输入素材收集'],
+  discovery: ['先看 .webgen/discovery-gap.txt', '一次补齐 Discovery 与输入素材收集缺口'],
   proposal: ['输出方案并获得确认，或记录直接做例外'],
   implementation: ['继续页面实现', '补齐关键交互与四类状态'],
   verification: ['执行 build / preview / scaffold 校验', '记录验证结果'],

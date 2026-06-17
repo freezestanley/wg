@@ -9,6 +9,7 @@ VERIFY_SCAFFOLD_SCRIPT="$SCRIPT_DIR/project-verify-scaffold.sh"
 SET_GATE_SCRIPT="$SCRIPT_DIR/workflow-set-gate.sh"
 PAGE_DESIGN_GUARD_SCRIPT="$SCRIPT_DIR/page-design-guard.mjs"
 CONTEXT_SUMMARY_SCRIPT="$SCRIPT_DIR/project-context-summary.mjs"
+DISCOVERY_GAP_SCRIPT="$SCRIPT_DIR/project-discovery-gap.mjs"
 
 usage() {
   echo "Usage: $0 <project-slug> <action> [sessionKey]" >&2
@@ -31,6 +32,10 @@ fail() {
       *DISCOVERY.md*|*方案尚未确认*)
         echo "PROJECT CONTEXT SUMMARY:" >&2
         node "$CONTEXT_SUMMARY_SCRIPT" "$PROJECT_ROOT" >&2 || true
+        if [ -f "$DISCOVERY_GAP_SCRIPT" ]; then
+          echo "DISCOVERY GAP:" >&2
+          node "$DISCOVERY_GAP_SCRIPT" "$PROJECT_ROOT" >&2 || true
+        fi
         ;;
     esac
   fi

@@ -16,11 +16,21 @@ usage() {
 SLUG=$1
 PROJECT_ROOT=$(sh "$GUARD_SCRIPT" "$SLUG")
 SUMMARY_FILE="$PROJECT_ROOT/.webgen/context-summary.txt"
+GAP_FILE="$PROJECT_ROOT/.webgen/discovery-gap.txt"
+GAP_SCRIPT="$SCRIPT_DIR/project-discovery-gap.mjs"
 
 if [ -f "$SUMMARY_FILE" ]; then
   SUMMARY=$(cat "$SUMMARY_FILE")
 else
   SUMMARY=$(node "$SUMMARY_SCRIPT" "$PROJECT_ROOT")
+fi
+
+if [ -f "$GAP_FILE" ]; then
+  GAP=$(cat "$GAP_FILE")
+elif [ -f "$GAP_SCRIPT" ]; then
+  GAP=$(node "$GAP_SCRIPT" "$PROJECT_ROOT")
+else
+  GAP=""
 fi
 
 stage=$(printf '%s\n' "$SUMMARY" | sed -n 's/^stage: //p' | head -n 1)
@@ -42,7 +52,7 @@ NEXT_ITEMS=".webgen/context-summary.txt"
 
 case "$stage" in
   discovery|proposal|"")
-    NEXT_ITEMS="$NEXT_ITEMS, PROJECT.md, HANDOFF.md"
+    NEXT_ITEMS="$NEXT_ITEMS"
     ;;
   implementation)
     NEXT_ITEMS="$NEXT_ITEMS, HANDOFF.md, PROJECT.md, API.md"
@@ -59,7 +69,7 @@ case "$discovery" in
   "Ready"|"Ready with Assumptions")
     ;;
   *)
-    NEXT_ITEMS="$NEXT_ITEMS, DISCOVERY.md"
+    NEXT_ITEMS="$NEXT_ITEMS, .webgen/discovery-gap.txt, DISCOVERY.md"
     ;;
 esac
 

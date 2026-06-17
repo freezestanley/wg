@@ -14,6 +14,7 @@ import { join } from "node:path";
 const WORKSPACE_ROOT = "/Users/za-stanlexu/.openclaw/agents/webgen/workspace";
 const MANIFEST_FILE = join(WORKSPACE_ROOT, "templates/vite-page/scaffold-manifest.txt");
 const SUMMARY_SCRIPT = join(WORKSPACE_ROOT, "scripts/project-context-summary.mjs");
+const GAP_SCRIPT = join(WORKSPACE_ROOT, "scripts/project-discovery-gap.mjs");
 const SYNC_DOCS_SCRIPT = join(WORKSPACE_ROOT, "scripts/workflow-sync-docs.sh");
 const RESUME_CONTEXT_SCRIPT = join(WORKSPACE_ROOT, "scripts/project-resume-context.sh");
 const SESSION_ENTRY_SCRIPT = join(WORKSPACE_ROOT, "scripts/project-session-entry.sh");
@@ -21,6 +22,7 @@ const SESSION_RECOVER_SCRIPT = join(WORKSPACE_ROOT, "scripts/session-recover.sh"
 const WORKFLOW_REPORT_SCRIPT = join(WORKSPACE_ROOT, "scripts/workflow-report.sh");
 const PREVIEW_STATUS_SCRIPT = join(WORKSPACE_ROOT, "scripts/project-preview-status.sh");
 const PREVIEW_SCRIPT = join(WORKSPACE_ROOT, "scripts/project-preview.sh");
+const DESIGN_REVIEW_SCRIPT = join(WORKSPACE_ROOT, "scripts/project-design-review.sh");
 const PREVIEW_MANAGER_SCRIPT = join(WORKSPACE_ROOT, "scripts/preview-manager.sh");
 const GLOBAL_CONFIG_FILE = join(WORKSPACE_ROOT, ".openclaw", "webgen-config.json");
 const ROUTING_TEMPLATE_FILE = join(WORKSPACE_ROOT, "docs", "webgen-routing-message-templates.md");
@@ -97,6 +99,48 @@ test("project context summary returns short workflow and discovery readiness", (
   }
 });
 
+test("project discovery gap reports concise missing sections and fields", () => {
+  assert.equal(existsSync(GAP_SCRIPT), true, "missing discovery gap script");
+
+  const root = mkdtempSync(join(tmpdir(), "webgen-discovery-gap-"));
+
+  try {
+    mkdirSync(join(root, ".webgen"), { recursive: true });
+    writeFileSync(
+      join(root, "DISCOVERY.md"),
+      [
+        "# Discovery",
+        "",
+        "## Design Read",
+        "",
+        "- 页面类型 / 受众 / 风格语言 / 设计体系：待确认",
+        "",
+        "## 风格档位",
+        "",
+        "- DESIGN_VARIANCE：待确认",
+        "",
+        "## Ready / Not Ready",
+        "",
+        "- 当前状态：`Not Ready`"
+      ].join("\n")
+    );
+
+    const output = execFileSync("node", [GAP_SCRIPT, root], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    assert.match(output, /^discovery: Not Ready$/m);
+    assert.match(output, /^missing-sections: /m);
+    assert.match(output, /审版检查点/);
+    assert.match(output, /^missing-fields: /m);
+    assert.match(output, /MOTION_INTENSITY/);
+    assert.equal(output.includes("## Design Read"), false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("workflow sync writes compact context summary file", () => {
   const root = mkdtempSync(join(tmpdir(), "webgen-context-sync-"));
 
@@ -141,7 +185,9 @@ test("workflow sync writes compact context summary file", () => {
     });
 
     const summaryFile = join(projectRoot, ".webgen", "context-summary.txt");
+    const gapFile = join(projectRoot, ".webgen", "discovery-gap.txt");
     assert.equal(existsSync(summaryFile), true, "missing context summary artifact");
+    assert.equal(existsSync(gapFile), true, "missing discovery gap artifact");
 
     const summary = execFileSync("sed", ["-n", "1,80p", summaryFile], {
       cwd: WORKSPACE_ROOT,
@@ -151,6 +197,12 @@ test("workflow sync writes compact context summary file", () => {
     assert.match(summary, /stage: implementation/);
     assert.match(summary, /proposal: Pass/);
     assert.match(summary, /discovery: Ready/);
+
+    const gap = execFileSync("sed", ["-n", "1,40p", gapFile], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    assert.match(gap, /discovery: Ready/);
 
     rmSync(projectRoot, { recursive: true, force: true });
   } finally {
@@ -184,6 +236,26 @@ test("project init includes compact context summary in default scope", () => {
       /\.webgen\/context-summary\.txt/
     );
     assert.match(
+      JSON.stringify(scope.stages.discovery || []),
+      /\.webgen\/discovery-gap\.txt/
+    );
+    assert.equal(
+      JSON.stringify(scope.stages.discovery || []).includes("PROJECT.md"),
+      false
+    );
+    assert.equal(
+      JSON.stringify(scope.stages.discovery || []).includes("HANDOFF.md"),
+      false
+    );
+    assert.equal(
+      JSON.stringify(scope.stages.proposal || []).includes("PROJECT.md"),
+      false
+    );
+    assert.equal(
+      JSON.stringify(scope.stages.proposal || []).includes("HANDOFF.md"),
+      false
+    );
+    assert.match(
       JSON.stringify(scope.stages.implementation || []),
       /\.webgen\/context-summary\.txt/
     );
@@ -209,7 +281,9 @@ test("project resume context prints summary and suggested follow-up reads", () =
     assert.match(output, /^project: .*projects\/resume-context-/m);
     assert.match(output, /^stage: discovery$/m);
     assert.match(output, /^discovery: Not Ready$/m);
-    assert.match(output, /^next: .*\.webgen\/context-summary\.txt.*DISCOVERY\.md/m);
+    assert.match(output, /^next: .*\.webgen\/context-summary\.txt.*\.webgen\/discovery-gap\.txt/m);
+    assert.equal(output.includes("PROJECT.md"), false);
+    assert.equal(output.includes("HANDOFF.md"), false);
     assert.equal(output.includes("suggested:"), false);
   } finally {
     rmSync(join(WORKSPACE_ROOT, "projects", slug), { recursive: true, force: true });
@@ -404,7 +478,7 @@ test("workflow report defaults to compact summary lines", () => {
     assert.match(output, /^verification: pending$/m);
     assert.match(output, /^design-review: pending$/m);
     assert.match(output, /^gates: route=Pass session=Pending proposal=Pending implementation=Pending verification=Pending designReview=Pending$/m);
-    assert.match(output, /^next: /m);
+    assert.match(output, /^next: .*discovery-gap.*一次补齐 Discovery/m);
     assert.equal(output.includes("# Workflow Report"), false);
     assert.equal(output.includes("## Gates"), false);
     assert.equal(output.includes("## Next Steps"), false);
@@ -468,6 +542,90 @@ test("project preview failure output stays compact when dev process exits early"
     assert.equal(output.includes("failed to load config from"), false);
     assert.equal(output.includes("ELIFECYCLE"), false);
     assert.equal(output.includes("tail -n 20"), false);
+  } finally {
+    rmSync(join(WORKSPACE_ROOT, "projects", slug), { recursive: true, force: true });
+  }
+});
+
+test("project design review skips cdp by default when screenshot review not requested", () => {
+  const slug = `design-review-skip-${Date.now()}`;
+
+  try {
+    execFileSync("sh", ["scripts/project-init.sh", slug, "vite-page"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    const output = execFileSync("sh", [DESIGN_REVIEW_SCRIPT, slug], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    assert.match(output, /DESIGN REVIEW CDP SKIPPED: not-requested/);
+
+    const reportFile = join(WORKSPACE_ROOT, "projects", slug, ".webgen", "checks", "design-review-cdp.json");
+    const report = JSON.parse(execFileSync("cat", [reportFile], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    }));
+
+    assert.equal(report.status, "skipped");
+    assert.equal(report.attempted, false);
+    assert.equal(report.reason, "not-requested");
+  } finally {
+    rmSync(join(WORKSPACE_ROOT, "projects", slug), { recursive: true, force: true });
+  }
+});
+
+test("project design review attempts cdp once when requested and then skips retries after failure", () => {
+  const slug = `design-review-once-${Date.now()}`;
+
+  try {
+    execFileSync("sh", ["scripts/project-init.sh", slug, "vite-page"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    const configFile = join(WORKSPACE_ROOT, "projects", slug, ".webgen", "config.json");
+    execFileSync("node", ["-e", `
+      const fs=require("fs");
+      const file=process.argv[1];
+      const data=JSON.parse(fs.readFileSync(file,"utf8"));
+      data.review = { ...(data.review||{}), cdpScreenshotRequested: true };
+      data.preview.healthcheck = "";
+      fs.writeFileSync(file, JSON.stringify(data, null, 2) + "\\n");
+    `, configFile], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    const first = execFileSync("sh", [DESIGN_REVIEW_SCRIPT, slug], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    assert.match(first, /DESIGN REVIEW CDP SKIPPED: preview-unavailable/);
+
+    const reportFile = join(WORKSPACE_ROOT, "projects", slug, ".webgen", "checks", "design-review-cdp.json");
+    let report = JSON.parse(execFileSync("cat", [reportFile], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    }));
+    assert.equal(report.status, "skipped");
+    assert.equal(report.attempted, true);
+    assert.equal(report.reason, "preview-unavailable");
+
+    const second = execFileSync("sh", [DESIGN_REVIEW_SCRIPT, slug], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    assert.match(second, /DESIGN REVIEW CDP SKIPPED: already-attempted/);
+
+    report = JSON.parse(execFileSync("cat", [reportFile], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    }));
+    assert.equal(report.status, "skipped");
+    assert.equal(report.attempted, true);
   } finally {
     rmSync(join(WORKSPACE_ROOT, "projects", slug), { recursive: true, force: true });
   }
@@ -854,6 +1012,8 @@ test("routing message templates include explicit project session entry command",
   assert.match(content, /项目 session 入场命令/);
   assert.match(content, /project-session-entry\.sh <slug> <sessionKey> new vite-page/);
   assert.match(content, /project-session-entry\.sh <slug> <sessionKey> resume:<slug>/);
+  assert.match(content, /discovery-gap/);
+  assert.match(content, /一次补齐/);
 });
 
 test("error handling and sop docs use project session entry as default entrypoint", () => {
@@ -882,4 +1042,15 @@ test("secondary docs mention project session entry command", () => {
 
   assert.match(changeLog, /project-session-entry\.sh/);
   assert.match(designHardChecks, /project-session-entry\.sh/);
+});
+
+test("agents context rules avoid clear and prefer summary-first recovery", () => {
+  const agents = execFileSync("sed", ["-n", "1,260p", join(WORKSPACE_ROOT, "AGENTS.md")], {
+    cwd: WORKSPACE_ROOT,
+    encoding: "utf8"
+  });
+
+  assert.equal(agents.includes("执行 `/clear`命令清空上下文"), false);
+  assert.match(agents, /\.webgen\/context-summary\.txt/);
+  assert.match(agents, /discovery-gap/);
 });

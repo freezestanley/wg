@@ -299,6 +299,7 @@ slug: demo-brand-site
 | 写入项目 lock | `session-lock.sh init` |
 | 校验 lock | `session-lock.sh check` |
 | 新建项目 | `project-init.sh` |
+| 输出 Discovery 缺口摘要 | `project-discovery-gap.mjs` |
 | 校验 scaffold | `project-verify-scaffold.sh` |
 | 启动预览 | `project-preview.sh` |
 | 查询预览状态 | `project-preview-status.sh` |
@@ -326,7 +327,7 @@ slug: demo-brand-site
 1. 收到消息先提取 `mode / slug`
 2. 运行 `session-lock.sh check ...`
 3. `new`：`project-init.sh` + `session-lock.sh init`
-4. `resume`：先跑 `project-session-entry.sh`，再按需补读项目文档续做
+4. `resume`：先跑 `project-session-entry.sh`，优先看 `.webgen/context-summary.txt` 与 `.webgen/discovery-gap.txt`，再按需补读项目文档
 5. 实现后走 preview / verify / package
 
 ---

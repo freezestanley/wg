@@ -144,6 +144,7 @@
 | 检查项目 lock | `./scripts/session-lock.sh check <slug> <sessionKey> <mode>` |
 | 初始化新项目 | `./scripts/project-init.sh <slug> <template-id>` |
 | 项目 session 统一入场 | `./scripts/project-session-entry.sh <slug> <sessionKey> <mode> [template-id]` |
+| 输出 Discovery 缺口摘要 | `node scripts/project-discovery-gap.mjs <project-root>` |
 | 输出 resume 短摘要 | `./scripts/project-resume-context.sh <slug>` |
 | 更新 Gate 状态 | `./scripts/workflow-set-gate.sh <slug> <gate> <status> [note]` |
 | 输出 workflow 报告 | `./scripts/workflow-report.sh <slug> [--verbose]` |

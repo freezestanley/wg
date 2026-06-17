@@ -32,6 +32,8 @@ DELIVERY_FILE="$PROJECT_ROOT/.webgen/checks/delivery.json"
 DESIGN_REVIEW_FILE="$PROJECT_ROOT/.webgen/checks/design-review.json"
 SUMMARY_FILE="$PROJECT_ROOT/.webgen/context-summary.txt"
 SUMMARY_SCRIPT="$SCRIPT_DIR/project-context-summary.mjs"
+DISCOVERY_GAP_FILE="$PROJECT_ROOT/.webgen/discovery-gap.txt"
+DISCOVERY_GAP_SCRIPT="$SCRIPT_DIR/project-discovery-gap.mjs"
 
 [ -f "$STATE_FILE" ] || {
   echo "Workflow state not found: $STATE_FILE" >&2
@@ -64,7 +66,7 @@ const replaceSection = (content, heading, replacement) => {
 };
 
 const nextStepByStage = {
-  discovery: ['- 完成 Discovery', '- 输出方案并等待确认'],
+  discovery: ['- 先看 .webgen/discovery-gap.txt', '- 一次补齐 Discovery 与输入素材收集缺口'],
   proposal: ['- 完成方案确认或记录直接做例外', '- 通过 Proposal Gate 后进入实现'],
   implementation: ['- 继续页面实现', '- 完成后进入 verification'],
   verification: ['- 完成预览/构建验证', '- 记录验证结果'],
@@ -162,6 +164,10 @@ NODE
 
 if [ -f "$SUMMARY_SCRIPT" ]; then
   node "$SUMMARY_SCRIPT" "$PROJECT_ROOT" > "$SUMMARY_FILE"
+fi
+
+if [ -f "$DISCOVERY_GAP_SCRIPT" ]; then
+  node "$DISCOVERY_GAP_SCRIPT" "$PROJECT_ROOT" > "$DISCOVERY_GAP_FILE"
 fi
 
 echo "WORKFLOW DOCS SYNC OK: $SLUG"

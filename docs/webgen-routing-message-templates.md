@@ -51,9 +51,10 @@ slug: <project-slug>
 1. 提取 mode 与 slug
 2. 优先执行：sh scripts/project-session-entry.sh <slug> <sessionKey> new vite-page
 3. 若成功：继续
-4. 写入/补齐 DISCOVERY.md
-5. 若为高审美页面：先补 `design-taste-frontend` 初始蓝图摘要，再规划页面实看复核与专项优化路径
-6. 进入方案确认门
+4. 先看 `.webgen/context-summary.txt` 与 `.webgen/discovery-gap.txt`
+5. 按 gap 一次补齐 `DISCOVERY.md` 全部缺口，不要逐轮试错
+6. 若为高审美页面：先补 `design-taste-frontend` 初始蓝图摘要，再规划页面实看复核与专项优化路径
+7. 进入方案确认门
 ```
 
 ### 2. resume 项目入场检查清单
@@ -62,9 +63,10 @@ slug: <project-slug>
 1. 提取 mode 与 slug
 2. 优先执行：sh scripts/project-session-entry.sh <slug> <sessionKey> resume:<slug>
 3. 若成功：继续
-4. 再按需读 PROJECT.md / HANDOFF.md / DISCOVERY.md / ASSETS.md / API.md
-5. 若涉及高审美页面，先检查是否已有 `design-taste-frontend` 初始蓝图摘要与页面复核 / 专项优化记录；缺失则先补
-6. 继续方案迭代或实现
+4. 先看 `.webgen/context-summary.txt` 与 `.webgen/discovery-gap.txt`
+5. 只有 gap 指向的缺口才再按需读 `DISCOVERY.md`，不要默认整篇重读
+6. 若涉及高审美页面，先检查是否已有 `design-taste-frontend` 初始蓝图摘要与页面复核 / 专项优化记录；缺失则先补
+7. 继续方案迭代或实现
 ```
 
 ---

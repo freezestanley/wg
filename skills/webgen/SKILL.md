@@ -207,8 +207,9 @@ slug: pricing-redesign
 - 优先执行 `sh scripts/project-session-entry.sh <slug> <sessionKey> resume:<slug>`
 - 优先执行 `sh scripts/project-resume-context.sh <slug>`
 - 或先读 `.webgen/context-summary.txt`
-- 再按需读 `PROJECT.md`
-- 再按需读 `HANDOFF.md` / `DISCOVERY.md` / `ASSETS.md` / `API.md`
+- 再看 `.webgen/discovery-gap.txt`
+- 只有 gap 指到缺口时，再按需读 `DISCOVERY.md`
+- 最后再按需读 `PROJECT.md` / `HANDOFF.md` / `ASSETS.md` / `API.md`
 
 不要把整套项目文档当成默认首读入口，先用短摘要判断当前阶段、Gate 和 Discovery 状态。
 

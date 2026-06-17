@@ -1,5 +1,16 @@
 {
   "admin-login": "agent:webgen:proj-admin-login",
   "agent-system-editor-page": "agent:webgen:proj-agent-system-editor-page",
-  "admin-dashboard": "agent:webgen:proj-admin-dashboard"
+  "admin-dashboard": "agent:webgen:proj-admin-dashboard",
+  "session-entry-1781677349042": "agent:webgen:proj-session-entry-1781677349042",
+  "session-entry-1781677505200": "agent:webgen:proj-session-entry-1781677505200",
+  "session-entry-1781677735808": "agent:webgen:proj-session-entry-1781677735808",
+  "session-entry-1781677811908": "agent:webgen:proj-session-entry-1781677811908",
+  "gshock-site": "agent:webgen:proj-gshock-site",
+  "urbane-c1-roadbike": "agent:webgen:dashboard:92bb2cf9-f747-4776-bd62-3a83e5155252",
+  "session-entry-1781691443423": "agent:webgen:proj-session-entry-1781691443423",
+  "session-entry-1781691519996": "agent:webgen:proj-session-entry-1781691519996",
+  "session-entry-1781692052853": "agent:webgen:proj-session-entry-1781692052853",
+  "session-entry-1781692161623": "agent:webgen:proj-session-entry-1781692161623",
+  "harley-site": "agent:webgen:proj-harley-site"
 }
