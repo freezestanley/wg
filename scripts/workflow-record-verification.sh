@@ -8,6 +8,7 @@ PROJECTS_ROOT="$WORKSPACE_ROOT/projects"
 TRANSITION_SCRIPT="$SCRIPT_DIR/workflow-transition.sh"
 SET_GATE_SCRIPT="$SCRIPT_DIR/workflow-set-gate.sh"
 SYNC_SCRIPT="$SCRIPT_DIR/workflow-sync-docs.sh"
+COMPACT_REQUEST_SCRIPT="$SCRIPT_DIR/workflow-request-compact.sh"
 
 usage() {
   echo "Usage: $0 <project-slug> <passed|failed> <notes> [commands]" >&2
@@ -87,5 +88,9 @@ else
 fi
 
 sh "$SYNC_SCRIPT" "$SLUG" "验证结果已记录：$STATUS" >/dev/null
+
+if [ "$STATUS" = "passed" ]; then
+  sh "$COMPACT_REQUEST_SCRIPT" "$SLUG" implementation verification workflow-record-verification >/dev/null
+fi
 
 echo "VERIFICATION RECORDED: $SLUG $STATUS"

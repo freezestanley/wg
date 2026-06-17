@@ -298,6 +298,9 @@ slug: demo-brand-site
 | 读取 slug→sessionKey | `session-registry.sh get` |
 | 写入项目 lock | `session-lock.sh init` |
 | 校验 lock | `session-lock.sh check` |
+| 发起 compact 请求 | `workflow-request-compact.sh` |
+| 查看 compact 待消费信息 | `workflow-inspect-compact-request.sh` |
+| 标记 compact 已处理 | `workflow-handle-compact.sh` |
 | 新建项目 | `project-init.sh` |
 | 输出 Discovery 缺口摘要 | `project-discovery-gap.mjs` |
 | 校验 scaffold | `project-verify-scaffold.sh` |
@@ -329,6 +332,34 @@ slug: demo-brand-site
 3. `new`：`project-init.sh` + `session-lock.sh init`
 4. `resume`：先跑 `project-session-entry.sh`，优先看 `.webgen/context-summary.txt` 与 `.webgen/discovery-gap.txt`，再按需补读项目文档
 5. 实现后走 preview / verify / package
+
+#### compact 消费侧
+1. 阶段切换脚本会写 `projects/<slug>/.webgen/compact-request.json`
+2. 调度 / 会话层先运行：
+
+```sh
+./scripts/workflow-inspect-compact-request.sh <slug>
+```
+
+3. 只读取两份最小上下文：
+   - `.webgen/context-summary.txt`
+   - `.webgen/discovery-gap.txt`
+4. 在 OpenClaw 会话层执行一次 `/compact`
+5. 执行成功后运行：
+
+```sh
+./scripts/workflow-handle-compact.sh <slug> done
+```
+
+6. 若无需执行或本次执行失败，则运行：
+
+```sh
+./scripts/workflow-handle-compact.sh <slug> skipped <note>
+```
+
+说明：
+- `workflow-inspect-compact-request.sh` 只输出 pending request 的最小消费信息
+- 真正的 `/compact` 只能由 OpenClaw 会话 / 调度层执行，shell 脚本不直接伪造
 
 ---
 

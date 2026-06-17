@@ -8,6 +8,7 @@ PROJECTS_ROOT="$WORKSPACE_ROOT/projects"
 TRANSITION_SCRIPT="$SCRIPT_DIR/workflow-transition.sh"
 SET_GATE_SCRIPT="$SCRIPT_DIR/workflow-set-gate.sh"
 SYNC_SCRIPT="$SCRIPT_DIR/workflow-sync-docs.sh"
+COMPACT_REQUEST_SCRIPT="$SCRIPT_DIR/workflow-request-compact.sh"
 
 usage() {
   echo "Usage: $0 <project-slug> <summary>" >&2
@@ -56,5 +57,6 @@ if [ "$CURRENT_STAGE" = "discovery" ]; then
 fi
 
 sh "$SYNC_SCRIPT" "$SLUG" "方案确认已记录" >/dev/null
+sh "$COMPACT_REQUEST_SCRIPT" "$SLUG" discovery proposal workflow-record-approval >/dev/null
 
 echo "APPROVAL RECORDED: $SLUG"

@@ -20,6 +20,9 @@ const RESUME_CONTEXT_SCRIPT = join(WORKSPACE_ROOT, "scripts/project-resume-conte
 const SESSION_ENTRY_SCRIPT = join(WORKSPACE_ROOT, "scripts/project-session-entry.sh");
 const SESSION_RECOVER_SCRIPT = join(WORKSPACE_ROOT, "scripts/session-recover.sh");
 const WORKFLOW_REPORT_SCRIPT = join(WORKSPACE_ROOT, "scripts/workflow-report.sh");
+const COMPACT_REQUEST_SCRIPT = join(WORKSPACE_ROOT, "scripts/workflow-request-compact.sh");
+const COMPACT_HANDLE_SCRIPT = join(WORKSPACE_ROOT, "scripts/workflow-handle-compact.sh");
+const COMPACT_INSPECT_SCRIPT = join(WORKSPACE_ROOT, "scripts/workflow-inspect-compact-request.sh");
 const PREVIEW_STATUS_SCRIPT = join(WORKSPACE_ROOT, "scripts/project-preview-status.sh");
 const PREVIEW_SCRIPT = join(WORKSPACE_ROOT, "scripts/project-preview.sh");
 const DESIGN_REVIEW_SCRIPT = join(WORKSPACE_ROOT, "scripts/project-design-review.sh");
@@ -323,6 +326,281 @@ test("project session entry handles new and resume flows", () => {
     assert.match(resumeOutput, /entry: resume/);
     assert.match(resumeOutput, /stage: discovery/);
     assert.equal(resumeOutput.includes("summary:"), false);
+  } finally {
+    rmSync(join(WORKSPACE_ROOT, "projects", slug), { recursive: true, force: true });
+  }
+});
+
+test("workflow stage transitions write and handle compact requests", () => {
+  const slug = `compact-request-${Date.now()}`;
+
+  try {
+    execFileSync("sh", ["scripts/project-init.sh", slug, "vite-page"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    execFileSync("sh", ["scripts/workflow-record-approval.sh", slug, "方案已确认"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    const requestFile = join(WORKSPACE_ROOT, "projects", slug, ".webgen", "compact-request.json");
+    let request = JSON.parse(execFileSync("cat", [requestFile], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    }));
+    assert.equal(request.status, "pending");
+    assert.equal(request.fromStage, "discovery");
+    assert.equal(request.toStage, "proposal");
+    assert.equal(request.requestedBy, "workflow-record-approval");
+
+    execFileSync("sh", [COMPACT_HANDLE_SCRIPT, slug, "done"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    request = JSON.parse(execFileSync("cat", [requestFile], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    }));
+    assert.equal(request.status, "done");
+    assert.equal(typeof request.handledAt, "string");
+
+    execFileSync("node", ["-e", `
+      const fs=require("fs");
+      const file=process.argv[1];
+      fs.writeFileSync(file, [
+        "# Discovery",
+        "",
+        "## Design Read",
+        "",
+        "- 页面类型 / 受众 / 风格语言 / 设计体系：已确认",
+        "",
+        "## 审版检查点",
+        "",
+        "- 首屏焦点：已确认",
+        "- 证明区策略：已确认",
+        "- 内容节奏：已确认",
+        "- CTA 收口方式：已确认",
+        "- H5 首屏优先级：已确认",
+        "",
+        "## 风格档位",
+        "",
+        "- DESIGN_VARIANCE：已确认",
+        "- MOTION_INTENSITY：已确认",
+        "- VISUAL_DENSITY：已确认",
+        "",
+        "## 氛围层策略",
+        "",
+        "- Atmosphere Layer：已确认",
+        "",
+        "## 适配目标",
+        "",
+        "- PC：已确认",
+        "- Pad：已确认",
+        "- H5：已确认",
+        "",
+        "## 交互补全状态",
+        "",
+        "- Loading：已确认",
+        "- Empty：已确认",
+        "- Error：已确认",
+        "- Active Feedback：已确认",
+        "",
+        "## 输入素材收集",
+        "",
+        "- 文案素材：已确认",
+        "",
+        "## 图片策略",
+        "",
+        "- 用户素材：已确认",
+        "",
+        "## API / 数据策略",
+        "",
+        "- 已确认",
+        "",
+        "## 适配检查清单",
+        "",
+        "- [x] 已确认",
+        "",
+        "## Ready / Not Ready",
+        "",
+        "- 当前状态：\`Ready\`"
+      ].join("\\n"));
+    `, join(WORKSPACE_ROOT, "projects", slug, "DISCOVERY.md")], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    execFileSync("sh", ["scripts/workflow-enter-implementation.sh", slug], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    request = JSON.parse(execFileSync("cat", [requestFile], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    }));
+    assert.equal(request.status, "pending");
+    assert.equal(request.fromStage, "proposal");
+    assert.equal(request.toStage, "implementation");
+    assert.equal(request.requestedBy, "workflow-enter-implementation");
+
+    execFileSync("sh", [COMPACT_HANDLE_SCRIPT, slug, "skipped", "compact-not-needed"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    request = JSON.parse(execFileSync("cat", [requestFile], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    }));
+    assert.equal(request.status, "skipped");
+    assert.equal(request.note, "compact-not-needed");
+  } finally {
+    rmSync(join(WORKSPACE_ROOT, "projects", slug), { recursive: true, force: true });
+  }
+});
+
+test("workflow verification and design review record compact requests on passed transitions", () => {
+  const slug = `compact-stage-${Date.now()}`;
+
+  try {
+    execFileSync("sh", ["scripts/project-init.sh", slug, "vite-page"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    execFileSync("sh", ["scripts/workflow-record-approval.sh", slug, "方案已确认"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    execFileSync("node", ["-e", `
+      const fs=require("fs");
+      const file=process.argv[1];
+      fs.writeFileSync(file, [
+        "# Discovery",
+        "",
+        "## Design Read",
+        "",
+        "- 页面类型 / 受众 / 风格语言 / 设计体系：已确认",
+        "",
+        "## 审版检查点",
+        "",
+        "- 首屏焦点：已确认",
+        "- 证明区策略：已确认",
+        "- 内容节奏：已确认",
+        "- CTA 收口方式：已确认",
+        "- H5 首屏优先级：已确认",
+        "",
+        "## 风格档位",
+        "",
+        "- DESIGN_VARIANCE：已确认",
+        "- MOTION_INTENSITY：已确认",
+        "- VISUAL_DENSITY：已确认",
+        "",
+        "## 氛围层策略",
+        "",
+        "- Atmosphere Layer：已确认",
+        "",
+        "## 适配目标",
+        "",
+        "- PC：已确认",
+        "- Pad：已确认",
+        "- H5：已确认",
+        "",
+        "## 交互补全状态",
+        "",
+        "- Loading：已确认",
+        "- Empty：已确认",
+        "- Error：已确认",
+        "- Active Feedback：已确认",
+        "",
+        "## 输入素材收集",
+        "",
+        "- 文案素材：已确认",
+        "",
+        "## 图片策略",
+        "",
+        "- 用户素材：已确认",
+        "",
+        "## API / 数据策略",
+        "",
+        "- 已确认",
+        "",
+        "## 适配检查清单",
+        "",
+        "- [x] 已确认",
+        "",
+        "## Ready / Not Ready",
+        "",
+        "- 当前状态：\`Ready\`"
+      ].join("\\n"));
+    `, join(WORKSPACE_ROOT, "projects", slug, "DISCOVERY.md")], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    execFileSync("sh", ["scripts/workflow-enter-implementation.sh", slug], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    execFileSync("sh", ["scripts/workflow-record-verification.sh", slug, "passed", "验证通过"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    const requestFile = join(WORKSPACE_ROOT, "projects", slug, ".webgen", "compact-request.json");
+    let request = JSON.parse(execFileSync("cat", [requestFile], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    }));
+    assert.equal(request.status, "pending");
+    assert.equal(request.fromStage, "implementation");
+    assert.equal(request.toStage, "verification");
+    assert.equal(request.requestedBy, "workflow-record-verification");
+
+    execFileSync("sh", [COMPACT_HANDLE_SCRIPT, slug, "done"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    execFileSync("sh", ["scripts/workflow-record-design-review.sh", slug, "passed", "设计复核通过"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    request = JSON.parse(execFileSync("cat", [requestFile], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    }));
+    assert.equal(request.status, "pending");
+    assert.equal(request.fromStage, "verification");
+    assert.equal(request.toStage, "design-review");
+    assert.equal(request.requestedBy, "workflow-record-design-review");
+  } finally {
+    rmSync(join(WORKSPACE_ROOT, "projects", slug), { recursive: true, force: true });
+  }
+});
+
+test("workflow compact inspect prints minimal dispatcher handoff", () => {
+  const slug = `compact-inspect-${Date.now()}`;
+
+  try {
+    execFileSync("sh", ["scripts/project-init.sh", slug, "vite-page"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    execFileSync("sh", ["scripts/workflow-record-approval.sh", slug, "方案已确认"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    const output = execFileSync("sh", [COMPACT_INSPECT_SCRIPT, slug], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    assert.match(output, /^status: pending$/m);
+    assert.match(output, /^transition: discovery -> proposal$/m);
+    assert.match(output, /^summary: .*\.webgen\/context-summary\.txt$/m);
+    assert.match(output, /^gap: .*\.webgen\/discovery-gap\.txt$/m);
+    assert.match(output, /^next: run \/compact then sh scripts\/workflow-handle-compact\.sh .* done$/m);
   } finally {
     rmSync(join(WORKSPACE_ROOT, "projects", slug), { recursive: true, force: true });
   }

@@ -129,6 +129,14 @@
 7. 若要用真实配图，把来源、用途、校验状态写入 `ASSETS.md`
 8. 交付前按 `docs/webgen-design-guide.md` 的验收项收口
 
+### 工作流 E：阶段切换后消费 compact 请求
+1. 项目侧阶段脚本写入 `.webgen/compact-request.json`
+2. 调度侧运行 `./scripts/workflow-inspect-compact-request.sh <slug>`
+3. 只读取 `.webgen/context-summary.txt` 与 `.webgen/discovery-gap.txt`
+4. 在 OpenClaw 会话层执行一次 `/compact`
+5. 成功则运行 `./scripts/workflow-handle-compact.sh <slug> done`
+6. 若无需执行或执行失败，则运行 `./scripts/workflow-handle-compact.sh <slug> skipped <note>`
+
 ---
 
 ## 三、最关键脚本速查
@@ -142,6 +150,9 @@
 | 强制重绑规范 sessionKey | `./scripts/session-recover.sh rebind <slug>` |
 | 从 projects 重建 session registry | `./scripts/session-recover.sh rebuild-registry` |
 | 检查项目 lock | `./scripts/session-lock.sh check <slug> <sessionKey> <mode>` |
+| 发起 compact 请求 | `./scripts/workflow-request-compact.sh <slug> <from-stage> <to-stage> <requested-by> [reason]` |
+| 查看 compact 待消费信息 | `./scripts/workflow-inspect-compact-request.sh <slug>` |
+| 标记 compact 已处理 | `./scripts/workflow-handle-compact.sh <slug> <done|skipped> [note]` |
 | 初始化新项目 | `./scripts/project-init.sh <slug> <template-id>` |
 | 项目 session 统一入场 | `./scripts/project-session-entry.sh <slug> <sessionKey> <mode> [template-id]` |
 | 输出 Discovery 缺口摘要 | `node scripts/project-discovery-gap.mjs <project-root>` |

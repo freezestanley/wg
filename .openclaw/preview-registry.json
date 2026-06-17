@@ -1,15 +1,48 @@
 {
   "items": [
     {
-      "slug": "harley-site",
-      "port": 4300,
-      "pid": "79706",
-      "healthcheck": "http://127.0.0.1:4300/",
+      "slug": "preview-recent-1781700972913",
+      "port": 4412,
+      "pid": "99982",
+      "healthcheck": "http://127.0.0.1:4412/",
       "status": "running",
-      "startedAt": "2026-06-17T11:42:54.460Z",
-      "readyAt": "2026-06-17T11:42:55.592Z",
-      "lastSeenAt": "2026-06-17T11:42:55.688Z",
+      "startedAt": "2026-06-17T12:56:13.830Z",
+      "readyAt": "2026-06-17T12:56:13.830Z",
+      "lastSeenAt": "2026-06-17T12:56:14.940Z",
       "pinned": false
+    },
+    {
+      "slug": "preview-target-1781700972913",
+      "port": 4359,
+      "pid": null,
+      "healthcheck": "http://127.0.0.1:4359/",
+      "status": "stopped",
+      "startedAt": null,
+      "readyAt": null,
+      "lastSeenAt": "2026-06-17T12:56:15.013Z",
+      "pinned": false
+    },
+    {
+      "slug": "deliver-keep-1781700978076",
+      "port": 4611,
+      "pid": "99961",
+      "healthcheck": "http://127.0.0.1:4611/",
+      "status": "running",
+      "startedAt": "2026-06-17T12:56:18.977Z",
+      "readyAt": "2026-06-17T12:56:18.977Z",
+      "lastSeenAt": "2026-06-17T12:56:19.112Z",
+      "pinned": false
+    },
+    {
+      "slug": "deliver-pin-1781700978076",
+      "port": 4613,
+      "pid": "99963",
+      "healthcheck": "http://127.0.0.1:4613/",
+      "status": "running",
+      "startedAt": "2026-06-17T12:56:19.016Z",
+      "readyAt": "2026-06-17T12:56:19.016Z",
+      "lastSeenAt": "2026-06-17T12:56:19.389Z",
+      "pinned": true
     }
   ]
 }
