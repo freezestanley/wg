@@ -81,6 +81,7 @@
   - `gsap-scrolltrigger`
   - React / Next 场景补 `gsap-react`
   - 上线前性能收口补 `gsap-performance`
+- 当前模板不是 React 时，如需更有设计感的组件动效、按钮、卡片、文字、hover、spotlight、reveal 一类效果，可优先把 **React Bits** 当作**参考动效源**，先借鉴其效果意图，再用当前模板技术栈复刻；不要把它默认当作运行时依赖直接接入。
 - 动画须尊重 `prefers-reduced-motion`，提供降级。
 - 若存在火焰、粒子、原子、流体等背景持续特效，先在 `DISCOVERY.md` 标注 `Atmosphere Layer = subtle` 或 `signature`，再决定是否进入复杂动效实现。
 

@@ -1,3 +1,5 @@
 {
-  "admin-login": "agent:webgen:proj-admin-login"
+  "admin-login": "agent:webgen:proj-admin-login",
+  "agent-system-editor-page": "agent:webgen:proj-agent-system-editor-page",
+  "admin-dashboard": "agent:webgen:proj-admin-dashboard"
 }
