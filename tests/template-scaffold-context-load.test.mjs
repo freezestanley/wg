@@ -31,6 +31,7 @@ const PREVIEW_STATUS_SCRIPT = join(WORKSPACE_ROOT, "scripts/project-preview-stat
 const PREVIEW_SCRIPT = join(WORKSPACE_ROOT, "scripts/project-preview.sh");
 const DESIGN_REVIEW_SCRIPT = join(WORKSPACE_ROOT, "scripts/project-design-review.sh");
 const PREVIEW_MANAGER_SCRIPT = join(WORKSPACE_ROOT, "scripts/preview-manager.sh");
+const PATHS_SCRIPT = join(WORKSPACE_ROOT, "scripts/webgen-paths.sh");
 const GLOBAL_CONFIG_FILE = join(WORKSPACE_ROOT, "config.js");
 const LEGACY_GLOBAL_CONFIG_FILE = join(WORKSPACE_ROOT, ".openclaw", "webgen-config.json");
 const ROUTING_TEMPLATE_FILE = join(WORKSPACE_ROOT, "docs", "webgen-routing-message-templates.md");
@@ -38,9 +39,27 @@ const ERROR_HANDLING_FILE = join(WORKSPACE_ROOT, "docs", "webgen-session-error-h
 const SOP_GATES_FILE = join(WORKSPACE_ROOT, "docs", "webgen-sop-and-gates.md");
 const CHANGE_LOG_FILE = join(WORKSPACE_ROOT, "docs", "webgen-skill-change-log.md");
 const DESIGN_HARD_CHECKS_FILE = join(WORKSPACE_ROOT, "docs", "plans", "2026-06-16-webgen-design-hard-checks.md");
+const TEST_PROJECTS_ROOT = mkdtempSync(join(tmpdir(), "webgen-projects-suite-"));
+
+process.env.WEBGEN_PROJECTS_ROOT = TEST_PROJECTS_ROOT;
+process.on("exit", () => {
+  rmSync(TEST_PROJECTS_ROOT, { recursive: true, force: true });
+});
 
 function writeWorkspaceConfig(config) {
   writeFileSync(GLOBAL_CONFIG_FILE, `module.exports = ${JSON.stringify(config, null, 2)};\n`);
+}
+
+function readProjectsRoot(env = process.env) {
+  return execFileSync("sh", [PATHS_SCRIPT, "projects-root"], {
+    cwd: WORKSPACE_ROOT,
+    env,
+    encoding: "utf8"
+  }).trim();
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 test("vite-page scaffold manifest excludes heavy generated assets", () => {
@@ -187,7 +206,7 @@ test("workflow sync writes compact context summary file", () => {
     writeFileSync(join(root, "DISCOVERY.md"), "# Discovery\n\n## Ready / Not Ready\n\n- 当前状态：`Ready`\n");
 
     const slug = `context-sync-test-${Date.now()}`;
-    const projectRoot = join(WORKSPACE_ROOT, "projects", slug);
+    const projectRoot = join(readProjectsRoot(), slug);
     execFileSync("mkdir", ["-p", projectRoot], { cwd: WORKSPACE_ROOT });
     execFileSync("cp", ["-R", `${root}/.`, projectRoot], { cwd: WORKSPACE_ROOT });
 
@@ -231,11 +250,11 @@ test("project init includes compact context summary in default scope", () => {
       encoding: "utf8"
     });
 
-    assert.match(output, /^project: .*projects\/context-scope-/m);
+    assert.match(output, new RegExp(`^project: ${escapeRegExp(join(readProjectsRoot(), slug))}$`, "m"));
     assert.equal(output.includes("SCAFFOLD VERIFY OK"), false);
     assert.equal(output.includes("WORKFLOW INIT OK"), false);
 
-    const scopeFile = join(WORKSPACE_ROOT, "projects", slug, ".webgen", "write-scope.json");
+    const scopeFile = join(readProjectsRoot(), slug, ".webgen", "write-scope.json");
     const scope = JSON.parse(
       execFileSync("cat", [scopeFile], {
         cwd: WORKSPACE_ROOT,
@@ -272,7 +291,7 @@ test("project init includes compact context summary in default scope", () => {
       /\.webgen\/context-summary\.txt/
     );
   } finally {
-    rmSync(join(WORKSPACE_ROOT, "projects", slug), { recursive: true, force: true });
+    rmSync(join(readProjectsRoot(), slug), { recursive: true, force: true });
   }
 });
 
@@ -290,7 +309,7 @@ test("project resume context prints summary and suggested follow-up reads", () =
       encoding: "utf8"
     });
 
-    assert.match(output, /^project: .*projects\/resume-context-/m);
+    assert.match(output, new RegExp(`^project: ${escapeRegExp(join(readProjectsRoot(), slug))}$`, "m"));
     assert.match(output, /^stage: discovery$/m);
     assert.match(output, /^discovery: Not Ready$/m);
     assert.match(output, /^next: .*\.webgen\/context-summary\.txt.*\.webgen\/discovery-gap\.txt/m);
@@ -298,7 +317,7 @@ test("project resume context prints summary and suggested follow-up reads", () =
     assert.equal(output.includes("HANDOFF.md"), false);
     assert.equal(output.includes("suggested:"), false);
   } finally {
-    rmSync(join(WORKSPACE_ROOT, "projects", slug), { recursive: true, force: true });
+    rmSync(join(readProjectsRoot(), slug), { recursive: true, force: true });
   }
 });
 
@@ -317,7 +336,7 @@ test("project session entry handles new and resume flows", () => {
     assert.equal(initOutput.includes("SCAFFOLD VERIFY OK"), false);
     assert.equal(initOutput.includes("summary:"), false);
 
-    const lockFile = join(WORKSPACE_ROOT, "projects", slug, ".webgen", "session-lock.json");
+    const lockFile = join(readProjectsRoot(), slug, ".webgen", "session-lock.json");
     const lock = JSON.parse(
       execFileSync("cat", [lockFile], {
         cwd: WORKSPACE_ROOT,
@@ -336,7 +355,31 @@ test("project session entry handles new and resume flows", () => {
     assert.match(resumeOutput, /stage: discovery/);
     assert.equal(resumeOutput.includes("summary:"), false);
   } finally {
-    rmSync(join(WORKSPACE_ROOT, "projects", slug), { recursive: true, force: true });
+    rmSync(join(readProjectsRoot(), slug), { recursive: true, force: true });
+  }
+});
+
+test("project session entry reports real projects root when new hits existing lock", () => {
+  const slug = `session-entry-existing-${Date.now()}`;
+  const sessionKey = `agent:webgen:proj-${slug}`;
+
+  try {
+    execFileSync("sh", [SESSION_ENTRY_SCRIPT, slug, sessionKey, "new", "vite-page"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    const result = spawnSync("sh", [SESSION_ENTRY_SCRIPT, slug, sessionKey, "new", "vite-page"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    assert.equal(result.status, 4);
+    assert.match(result.stderr, /LOCK_EXISTS_SAME/);
+    assert.match(result.stderr, new RegExp(`projects-root: ${escapeRegExp(readProjectsRoot())}`));
+    assert.match(result.stderr, new RegExp(`lock-file: ${escapeRegExp(join(readProjectsRoot(), slug, ".webgen", "session-lock.json"))}`));
+  } finally {
+    rmSync(join(readProjectsRoot(), slug), { recursive: true, force: true });
   }
 });
 
@@ -354,7 +397,7 @@ test("workflow stage transitions write and handle compact requests", () => {
       encoding: "utf8"
     });
 
-    const requestFile = join(WORKSPACE_ROOT, "projects", slug, ".webgen", "compact-request.json");
+    const requestFile = join(readProjectsRoot(), slug, ".webgen", "compact-request.json");
     let request = JSON.parse(execFileSync("cat", [requestFile], {
       cwd: WORKSPACE_ROOT,
       encoding: "utf8"
@@ -436,7 +479,7 @@ test("workflow stage transitions write and handle compact requests", () => {
         "",
         "- 当前状态：\`Ready\`"
       ].join("\\n"));
-    `, join(WORKSPACE_ROOT, "projects", slug, "DISCOVERY.md")], {
+    `, join(readProjectsRoot(), slug, "DISCOVERY.md")], {
       cwd: WORKSPACE_ROOT,
       encoding: "utf8"
     });
@@ -465,7 +508,7 @@ test("workflow stage transitions write and handle compact requests", () => {
     assert.equal(request.status, "skipped");
     assert.equal(request.note, "compact-not-needed");
   } finally {
-    rmSync(join(WORKSPACE_ROOT, "projects", slug), { recursive: true, force: true });
+    rmSync(join(readProjectsRoot(), slug), { recursive: true, force: true });
   }
 });
 
@@ -542,7 +585,7 @@ test("workflow verification and design review record compact requests on passed 
         "",
         "- 当前状态：\`Ready\`"
       ].join("\\n"));
-    `, join(WORKSPACE_ROOT, "projects", slug, "DISCOVERY.md")], {
+    `, join(readProjectsRoot(), slug, "DISCOVERY.md")], {
       cwd: WORKSPACE_ROOT,
       encoding: "utf8"
     });
@@ -555,7 +598,7 @@ test("workflow verification and design review record compact requests on passed 
       encoding: "utf8"
     });
 
-    const requestFile = join(WORKSPACE_ROOT, "projects", slug, ".webgen", "compact-request.json");
+    const requestFile = join(readProjectsRoot(), slug, ".webgen", "compact-request.json");
     let request = JSON.parse(execFileSync("cat", [requestFile], {
       cwd: WORKSPACE_ROOT,
       encoding: "utf8"
@@ -583,7 +626,7 @@ test("workflow verification and design review record compact requests on passed 
     assert.equal(request.toStage, "design-review");
     assert.equal(request.requestedBy, "workflow-record-design-review");
   } finally {
-    rmSync(join(WORKSPACE_ROOT, "projects", slug), { recursive: true, force: true });
+    rmSync(join(readProjectsRoot(), slug), { recursive: true, force: true });
   }
 });
 
@@ -611,7 +654,7 @@ test("workflow compact inspect prints minimal dispatcher handoff", () => {
     assert.match(output, /^gap: .*\.webgen\/discovery-gap\.txt$/m);
     assert.match(output, /^next: run \/compact then sh scripts\/workflow-handle-compact\.sh .* done$/m);
   } finally {
-    rmSync(join(WORKSPACE_ROOT, "projects", slug), { recursive: true, force: true });
+    rmSync(join(readProjectsRoot(), slug), { recursive: true, force: true });
   }
 });
 
@@ -629,7 +672,7 @@ test("session recover lists projects and rebuilds canonical registry from locks"
       encoding: "utf8"
     });
 
-    const lockFile = join(WORKSPACE_ROOT, "projects", slug, ".webgen", "session-lock.json");
+    const lockFile = join(readProjectsRoot(), slug, ".webgen", "session-lock.json");
     execFileSync("node", ["-e", `
       const fs=require("fs");
       const file=process.argv[1];
@@ -666,7 +709,7 @@ test("session recover lists projects and rebuilds canonical registry from locks"
     } else {
       writeFileSync(registryFile, registryBackup);
     }
-    rmSync(join(WORKSPACE_ROOT, "projects", slug), { recursive: true, force: true });
+    rmSync(join(readProjectsRoot(), slug), { recursive: true, force: true });
   }
 });
 
@@ -685,7 +728,7 @@ test("session recover resume and rebind normalize lock to canonical key", () => 
       encoding: "utf8"
     });
 
-    const lockFile = join(WORKSPACE_ROOT, "projects", slug, ".webgen", "session-lock.json");
+    const lockFile = join(readProjectsRoot(), slug, ".webgen", "session-lock.json");
     execFileSync("node", ["-e", `
       const fs=require("fs");
       const file=process.argv[1];
@@ -741,7 +784,7 @@ test("session recover resume and rebind normalize lock to canonical key", () => 
     } else {
       writeFileSync(registryFile, registryBackup);
     }
-    rmSync(join(WORKSPACE_ROOT, "projects", slug), { recursive: true, force: true });
+    rmSync(join(readProjectsRoot(), slug), { recursive: true, force: true });
   }
 });
 
@@ -759,7 +802,7 @@ test("workflow report defaults to compact summary lines", () => {
       encoding: "utf8"
     });
 
-    assert.match(output, /^project: .*projects\/workflow-report-/m);
+    assert.match(output, new RegExp(`^project: ${escapeRegExp(join(readProjectsRoot(), slug))}$`, "m"));
     assert.match(output, /^stage: discovery$/m);
     assert.match(output, /^approval: pending$/m);
     assert.match(output, /^verification: pending$/m);
@@ -771,7 +814,7 @@ test("workflow report defaults to compact summary lines", () => {
     assert.equal(output.includes("## Gates"), false);
     assert.equal(output.includes("## Next Steps"), false);
   } finally {
-    rmSync(join(WORKSPACE_ROOT, "projects", slug), { recursive: true, force: true });
+    rmSync(join(readProjectsRoot(), slug), { recursive: true, force: true });
   }
 });
 
@@ -809,7 +852,7 @@ test("workflow report verbose shows queued publish details", () => {
         publishedAt:null,
         notes:"已进入发布队列"
       }, null, 2) + "\\n");
-    `, join(WORKSPACE_ROOT, "projects", slug, ".webgen", "workflow-state.json"), join(WORKSPACE_ROOT, "projects", slug, ".webgen", "checks", "publish.json")], {
+    `, join(readProjectsRoot(), slug, ".webgen", "workflow-state.json"), join(readProjectsRoot(), slug, ".webgen", "checks", "publish.json")], {
       cwd: WORKSPACE_ROOT,
       encoding: "utf8"
     });
@@ -824,7 +867,7 @@ test("workflow report verbose shows queued publish details", () => {
     assert.match(output, /job_demo/);
     assert.match(output, /https:\/\/publish\.example\.test\/status\/job_demo/);
   } finally {
-    rmSync(join(WORKSPACE_ROOT, "projects", slug), { recursive: true, force: true });
+    rmSync(join(readProjectsRoot(), slug), { recursive: true, force: true });
   }
 });
 
@@ -837,8 +880,8 @@ test("workflow announce status shows publish queue and published states", () => 
       encoding: "utf8"
     });
 
-    const stateFile = join(WORKSPACE_ROOT, "projects", slug, ".webgen", "workflow-state.json");
-    const publishFile = join(WORKSPACE_ROOT, "projects", slug, ".webgen", "checks", "publish.json");
+    const stateFile = join(readProjectsRoot(), slug, ".webgen", "workflow-state.json");
+    const publishFile = join(readProjectsRoot(), slug, ".webgen", "checks", "publish.json");
 
     execFileSync("node", ["-e", `
       const fs=require("fs");
@@ -896,7 +939,7 @@ test("workflow announce status shows publish queue and published states", () => 
     });
     assert.match(output, /^发布已完成 \/ 尚未完成设计复核 \/ 无阻塞$/m);
   } finally {
-    rmSync(join(WORKSPACE_ROOT, "projects", slug), { recursive: true, force: true });
+    rmSync(join(readProjectsRoot(), slug), { recursive: true, force: true });
   }
 });
 
@@ -918,7 +961,7 @@ test("workflow record publish marks exception-pass when user chooses not to publ
       state.gates = { ...(state.gates||{}), proposal:"Pass", verification:"Pass", designReview:"Pass" };
       fs.writeFileSync(stateFile, JSON.stringify(state, null, 2) + "\\n");
       fs.writeFileSync(reviewFile, JSON.stringify({ status:"passed", checkedAt:new Date().toISOString(), notes:"ok" }, null, 2) + "\\n");
-    `, join(WORKSPACE_ROOT, "projects", slug, ".webgen", "workflow-state.json"), join(WORKSPACE_ROOT, "projects", slug, ".webgen", "checks", "design-review.json")], {
+    `, join(readProjectsRoot(), slug, ".webgen", "workflow-state.json"), join(readProjectsRoot(), slug, ".webgen", "checks", "design-review.json")], {
       cwd: WORKSPACE_ROOT,
       encoding: "utf8"
     });
@@ -928,11 +971,11 @@ test("workflow record publish marks exception-pass when user chooses not to publ
       encoding: "utf8"
     });
 
-    const state = JSON.parse(execFileSync("cat", [join(WORKSPACE_ROOT, "projects", slug, ".webgen", "workflow-state.json")], {
+    const state = JSON.parse(execFileSync("cat", [join(readProjectsRoot(), slug, ".webgen", "workflow-state.json")], {
       cwd: WORKSPACE_ROOT,
       encoding: "utf8"
     }));
-    const publish = JSON.parse(execFileSync("cat", [join(WORKSPACE_ROOT, "projects", slug, ".webgen", "checks", "publish.json")], {
+    const publish = JSON.parse(execFileSync("cat", [join(readProjectsRoot(), slug, ".webgen", "checks", "publish.json")], {
       cwd: WORKSPACE_ROOT,
       encoding: "utf8"
     }));
@@ -942,7 +985,7 @@ test("workflow record publish marks exception-pass when user chooses not to publ
     assert.equal(publish.userConfirmed, false);
     assert.equal(publish.gate, "Exception-Pass");
   } finally {
-    rmSync(join(WORKSPACE_ROOT, "projects", slug), { recursive: true, force: true });
+    rmSync(join(readProjectsRoot(), slug), { recursive: true, force: true });
   }
 });
 
@@ -974,7 +1017,7 @@ printf '%s' '{"success":true,"message":"成功上传 1 个文件","files":[{"ori
       encoding: "utf8"
     });
 
-    const projectRoot = join(WORKSPACE_ROOT, "projects", slug);
+    const projectRoot = join(readProjectsRoot(), slug);
     writeFileSync(join(projectRoot, "dist.zip"), "fake-zip-content\n");
 
     const output = execFileSync("sh", [PROJECT_PUBLISH_SCRIPT, slug], {
@@ -1011,7 +1054,7 @@ printf '%s' '{"success":true,"message":"成功上传 1 个文件","files":[{"ori
     } else {
       writeFileSync(GLOBAL_CONFIG_FILE, configBackup);
     }
-    rmSync(join(WORKSPACE_ROOT, "projects", slug), { recursive: true, force: true });
+    rmSync(join(readProjectsRoot(), slug), { recursive: true, force: true });
   }
 });
 
@@ -1059,7 +1102,7 @@ printf '%s' '{"status":"queued","jobId":"job_test","pollUrl":"https://example.te
       encoding: "utf8"
     });
 
-    const projectRoot = join(WORKSPACE_ROOT, "projects", slug);
+    const projectRoot = join(readProjectsRoot(), slug);
     writeFileSync(join(projectRoot, "dist.zip"), "fake-zip-content\n");
 
     const output = execFileSync("sh", [PROJECT_PUBLISH_SCRIPT, slug], {
@@ -1096,7 +1139,7 @@ printf '%s' '{"status":"queued","jobId":"job_test","pollUrl":"https://example.te
     } else {
       writeFileSync(GLOBAL_CONFIG_FILE, configBackup);
     }
-    rmSync(join(WORKSPACE_ROOT, "projects", slug), { recursive: true, force: true });
+    rmSync(join(readProjectsRoot(), slug), { recursive: true, force: true });
   }
 });
 
@@ -1129,7 +1172,7 @@ printf '%s' '{"status":"published","releaseId":"rel_polled","url":"https://examp
       encoding: "utf8"
     });
 
-    const projectRoot = join(WORKSPACE_ROOT, "projects", slug);
+    const projectRoot = join(readProjectsRoot(), slug);
     writeFileSync(join(projectRoot, ".webgen", "checks", "publish.json"), JSON.stringify({
       status: "queued",
       gate: "Pass",
@@ -1177,7 +1220,7 @@ printf '%s' '{"status":"published","releaseId":"rel_polled","url":"https://examp
     } else {
       writeFileSync(GLOBAL_CONFIG_FILE, configBackup);
     }
-    rmSync(join(WORKSPACE_ROOT, "projects", slug), { recursive: true, force: true });
+    rmSync(join(readProjectsRoot(), slug), { recursive: true, force: true });
   }
 });
 
@@ -1204,7 +1247,7 @@ test("project preview status defaults to compact lines", () => {
     assert.equal(output.includes("Healthcheck:"), false);
     assert.equal(output.includes("Ready At:"), false);
   } finally {
-    rmSync(join(WORKSPACE_ROOT, "projects", slug), { recursive: true, force: true });
+    rmSync(join(readProjectsRoot(), slug), { recursive: true, force: true });
   }
 });
 
@@ -1237,7 +1280,7 @@ test("project preview failure output stays compact when dev process exits early"
     assert.equal(output.includes("ELIFECYCLE"), false);
     assert.equal(output.includes("tail -n 20"), false);
   } finally {
-    rmSync(join(WORKSPACE_ROOT, "projects", slug), { recursive: true, force: true });
+    rmSync(join(readProjectsRoot(), slug), { recursive: true, force: true });
   }
 });
 
@@ -1257,7 +1300,7 @@ test("project design review skips cdp by default when screenshot review not requ
 
     assert.match(output, /DESIGN REVIEW CDP SKIPPED: not-requested/);
 
-    const reportFile = join(WORKSPACE_ROOT, "projects", slug, ".webgen", "checks", "design-review-cdp.json");
+    const reportFile = join(readProjectsRoot(), slug, ".webgen", "checks", "design-review-cdp.json");
     const report = JSON.parse(execFileSync("cat", [reportFile], {
       cwd: WORKSPACE_ROOT,
       encoding: "utf8"
@@ -1267,7 +1310,7 @@ test("project design review skips cdp by default when screenshot review not requ
     assert.equal(report.attempted, false);
     assert.equal(report.reason, "not-requested");
   } finally {
-    rmSync(join(WORKSPACE_ROOT, "projects", slug), { recursive: true, force: true });
+    rmSync(join(readProjectsRoot(), slug), { recursive: true, force: true });
   }
 });
 
@@ -1280,7 +1323,7 @@ test("project design review attempts cdp once when requested and then skips retr
       encoding: "utf8"
     });
 
-    const configFile = join(WORKSPACE_ROOT, "projects", slug, ".webgen", "config.json");
+    const configFile = join(readProjectsRoot(), slug, ".webgen", "config.json");
     execFileSync("node", ["-e", `
       const fs=require("fs");
       const file=process.argv[1];
@@ -1299,7 +1342,7 @@ test("project design review attempts cdp once when requested and then skips retr
     });
     assert.match(first, /DESIGN REVIEW CDP SKIPPED: preview-unavailable/);
 
-    const reportFile = join(WORKSPACE_ROOT, "projects", slug, ".webgen", "checks", "design-review-cdp.json");
+    const reportFile = join(readProjectsRoot(), slug, ".webgen", "checks", "design-review-cdp.json");
     let report = JSON.parse(execFileSync("cat", [reportFile], {
       cwd: WORKSPACE_ROOT,
       encoding: "utf8"
@@ -1321,7 +1364,7 @@ test("project design review attempts cdp once when requested and then skips retr
     assert.equal(report.status, "skipped");
     assert.equal(report.attempted, true);
   } finally {
-    rmSync(join(WORKSPACE_ROOT, "projects", slug), { recursive: true, force: true });
+    rmSync(join(readProjectsRoot(), slug), { recursive: true, force: true });
   }
 });
 
@@ -1339,8 +1382,8 @@ test("preview manager supports registry controls and respects pinned previews", 
       encoding: "utf8"
     });
 
-    const keepRoot = join(WORKSPACE_ROOT, "projects", keepSlug);
-    const pinnedRoot = join(WORKSPACE_ROOT, "projects", pinnedSlug);
+    const keepRoot = join(readProjectsRoot(), keepSlug);
+    const pinnedRoot = join(readProjectsRoot(), pinnedSlug);
 
     writeFileSync(join(keepRoot, ".webgen", "preview.pid"), `99991\n`);
     writeFileSync(join(pinnedRoot, ".webgen", "preview.pid"), `99992\n`);
@@ -1409,8 +1452,8 @@ test("preview manager supports registry controls and respects pinned previews", 
     });
     assert.match(capacityOutput, /capacity:/);
   } finally {
-    rmSync(join(WORKSPACE_ROOT, "projects", keepSlug), { recursive: true, force: true });
-    rmSync(join(WORKSPACE_ROOT, "projects", pinnedSlug), { recursive: true, force: true });
+    rmSync(join(readProjectsRoot(), keepSlug), { recursive: true, force: true });
+    rmSync(join(readProjectsRoot(), pinnedSlug), { recursive: true, force: true });
   }
 });
 
@@ -1500,6 +1543,97 @@ test("workspace config ignores legacy webgen-config json fallback", () => {
   }
 });
 
+test("workspace config resolves configurable projects root", () => {
+  const configBackup = existsSync(GLOBAL_CONFIG_FILE)
+    ? execFileSync("cat", [GLOBAL_CONFIG_FILE], { cwd: WORKSPACE_ROOT, encoding: "utf8" })
+    : null;
+  const targetRoot = mkdtempSync(join(tmpdir(), "webgen-projects-root-"));
+
+  try {
+    writeWorkspaceConfig({
+      paths: {
+        projectsRoot: targetRoot
+      }
+    });
+
+    const resolved = readProjectsRoot({ ...process.env, WEBGEN_PROJECTS_ROOT: "" });
+    assert.equal(resolved, targetRoot);
+  } finally {
+    if (configBackup === null) {
+      rmSync(GLOBAL_CONFIG_FILE, { force: true });
+    } else {
+      writeFileSync(GLOBAL_CONFIG_FILE, configBackup);
+    }
+    rmSync(targetRoot, { recursive: true, force: true });
+  }
+});
+
+test("project init creates project under configured projects root", () => {
+  const configBackup = existsSync(GLOBAL_CONFIG_FILE)
+    ? execFileSync("cat", [GLOBAL_CONFIG_FILE], { cwd: WORKSPACE_ROOT, encoding: "utf8" })
+    : null;
+  const targetRoot = mkdtempSync(join(tmpdir(), "webgen-projects-init-"));
+  const slug = `configured-root-${Date.now()}`;
+
+  try {
+    writeWorkspaceConfig({
+      paths: {
+        projectsRoot: targetRoot
+      }
+    });
+
+    const output = execFileSync("sh", ["scripts/project-init.sh", slug, "vite-page"], {
+      cwd: WORKSPACE_ROOT,
+      env: { ...process.env, WEBGEN_PROJECTS_ROOT: "" },
+      encoding: "utf8"
+    });
+
+    const projectRoot = join(targetRoot, slug);
+    assert.match(output, new RegExp(`^project: ${escapeRegExp(projectRoot)}$`, "m"));
+    assert.equal(existsSync(join(projectRoot, ".webgen", "config.json")), true);
+  } finally {
+    if (configBackup === null) {
+      rmSync(GLOBAL_CONFIG_FILE, { force: true });
+    } else {
+      writeFileSync(GLOBAL_CONFIG_FILE, configBackup);
+    }
+    rmSync(targetRoot, { recursive: true, force: true });
+  }
+});
+
+test("project guard resolves configured projects root", () => {
+  const configBackup = existsSync(GLOBAL_CONFIG_FILE)
+    ? execFileSync("cat", [GLOBAL_CONFIG_FILE], { cwd: WORKSPACE_ROOT, encoding: "utf8" })
+    : null;
+  const targetRoot = mkdtempSync(join(tmpdir(), "webgen-projects-guard-"));
+  const slug = `guard-root-${Date.now()}`;
+
+  try {
+    writeWorkspaceConfig({
+      paths: {
+        projectsRoot: targetRoot
+      }
+    });
+
+    mkdirSync(join(targetRoot, slug), { recursive: true });
+
+    const output = execFileSync("sh", ["scripts/project-guard.sh", slug], {
+      cwd: WORKSPACE_ROOT,
+      env: { ...process.env, WEBGEN_PROJECTS_ROOT: "" },
+      encoding: "utf8"
+    }).trim();
+
+    assert.equal(output, join(targetRoot, slug));
+  } finally {
+    if (configBackup === null) {
+      rmSync(GLOBAL_CONFIG_FILE, { force: true });
+    } else {
+      writeFileSync(GLOBAL_CONFIG_FILE, configBackup);
+    }
+    rmSync(targetRoot, { recursive: true, force: true });
+  }
+});
+
 test("project preview enforces capacity by stopping stale unpinned previews before launch", () => {
   const oldSlug = `preview-old-${Date.now()}`;
   const recentSlug = `preview-recent-${Date.now()}`;
@@ -1517,8 +1651,8 @@ test("project preview enforces capacity by stopping stale unpinned previews befo
       });
     }
 
-    const oldRoot = join(WORKSPACE_ROOT, "projects", oldSlug);
-    const recentRoot = join(WORKSPACE_ROOT, "projects", recentSlug);
+    const oldRoot = join(readProjectsRoot(), oldSlug);
+    const recentRoot = join(readProjectsRoot(), recentSlug);
 
     writeFileSync(join(oldRoot, ".webgen", "preview.pid"), `99981\n`);
     writeFileSync(join(recentRoot, ".webgen", "preview.pid"), `99982\n`);
@@ -1592,9 +1726,9 @@ test("project preview enforces capacity by stopping stale unpinned previews befo
     } else {
       writeFileSync(registryFile, registryBackup);
     }
-    rmSync(join(WORKSPACE_ROOT, "projects", oldSlug), { recursive: true, force: true });
-    rmSync(join(WORKSPACE_ROOT, "projects", recentSlug), { recursive: true, force: true });
-    rmSync(join(WORKSPACE_ROOT, "projects", targetSlug), { recursive: true, force: true });
+    rmSync(join(readProjectsRoot(), oldSlug), { recursive: true, force: true });
+    rmSync(join(readProjectsRoot(), recentSlug), { recursive: true, force: true });
+    rmSync(join(readProjectsRoot(), targetSlug), { recursive: true, force: true });
   }
 });
 
@@ -1607,7 +1741,7 @@ test("project preview stop removes tracked preview entry", () => {
       encoding: "utf8"
     });
 
-    const projectRoot = join(WORKSPACE_ROOT, "projects", slug);
+    const projectRoot = join(readProjectsRoot(), slug);
     writeFileSync(join(projectRoot, ".webgen", "preview.pid"), `99971\n`);
 
     execFileSync("node", ["-e", `
@@ -1647,7 +1781,7 @@ test("project preview stop removes tracked preview entry", () => {
     }));
     assert.equal(registry.items.some((item) => item.slug === slug), false);
   } finally {
-    rmSync(join(WORKSPACE_ROOT, "projects", slug), { recursive: true, force: true });
+    rmSync(join(readProjectsRoot(), slug), { recursive: true, force: true });
   }
 });
 
@@ -1664,9 +1798,9 @@ test("workflow deliver stops other unpinned previews after delivery", () => {
       });
     }
 
-    const keepRoot = join(WORKSPACE_ROOT, "projects", keepSlug);
-    const stopRoot = join(WORKSPACE_ROOT, "projects", stopSlug);
-    const pinnedRoot = join(WORKSPACE_ROOT, "projects", pinnedSlug);
+    const keepRoot = join(readProjectsRoot(), keepSlug);
+    const stopRoot = join(readProjectsRoot(), stopSlug);
+    const pinnedRoot = join(readProjectsRoot(), pinnedSlug);
 
     for (const [root, port, pid] of [
       [keepRoot, 4611, 99961],
@@ -1740,9 +1874,9 @@ test("workflow deliver stops other unpinned previews after delivery", () => {
     assert.equal(stopConfig.preview.state.status, "stopped");
     assert.equal(pinnedConfig.preview.state.status, "running");
   } finally {
-    rmSync(join(WORKSPACE_ROOT, "projects", keepSlug), { recursive: true, force: true });
-    rmSync(join(WORKSPACE_ROOT, "projects", stopSlug), { recursive: true, force: true });
-    rmSync(join(WORKSPACE_ROOT, "projects", pinnedSlug), { recursive: true, force: true });
+    rmSync(join(readProjectsRoot(), keepSlug), { recursive: true, force: true });
+    rmSync(join(readProjectsRoot(), stopSlug), { recursive: true, force: true });
+    rmSync(join(readProjectsRoot(), pinnedSlug), { recursive: true, force: true });
   }
 });
 

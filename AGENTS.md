@@ -124,7 +124,8 @@
 
 - **一个 session = 一个项目。** 这是硬约束，不是建议。
 - 当前 session 只服务当前项目，不跨项目混用上下文。
-- 项目统一放在 `projects/<project-slug>/`。
+- 项目统一放在 `<projectsRoot>/<project-slug>/`。
+- `projectsRoot` 由 workspace 级 `config.js -> paths.projectsRoot` 提供；未配置时默认回退到 `workspace/projects`。下文所有 `projects/<slug>` 表述，均指代这个逻辑项目根。
 
 ### SO-003a: Session→Slug 单项目锁定（防串项目硬约束）
 
@@ -142,7 +143,7 @@
 - **新项目必须新 session**
   - 用户提出与当前锁定 slug 不同的新建站需求时，**不在本 session 处理**；按 SO-003b 双角色调度，由接待 / 调度 session 用 `sessions_send` 路由到唯一的 `agent:webgen:proj-<slug>` 独立 session。
 - **写边界**
-  - 任何写操作只允许落在 `projects/<本 session 锁定 slug>/` 内，跨项目写一律拒绝。
+  - 任何写操作只允许落在 `<projectsRoot>/<本 session 锁定 slug>/` 内，跨项目写一律拒绝。
 - **每个项目必须至少包含**
   - `PROJECT.md`
   - `DISCOVERY.md`
@@ -152,7 +153,7 @@
   - `.webgen/`
 - **首次进入一个新 session 时**
   1. 根据用户需求或 session-key 确定 `project-slug`。
-  2. 使用模板创建 `projects/<project-slug>/`。
+  2. 使用模板创建 `<projectsRoot>/<project-slug>/`。
   3. 写入项目文档和 `.webgen` 状态文件。
 - **后续回到同一 session 时**
   - 优先执行：`sh scripts/project-session-entry.sh <slug> <sessionKey> resume:<slug>`
@@ -258,7 +259,7 @@
   - 当前可用模版：`templates/vite-page`（单页预览模版）。若后续新增其它模板，再按需扩展。
   - 选定模版后，默认命令为：`./scripts/project-init.sh <slug> <template-id>`；初始化完成后立即执行：`./scripts/project-verify-scaffold.sh <slug> <template-id>`。
 - **生成方式（唯一命令入口，禁止手写复制）**
-  - **必须走命令脚本整目录复制**：`sh scripts/project-init.sh <slug> <template-id>`。该脚本以 `cp -R scaffold/. projects/<slug>/` 原子全量复制脚手架，再渲染 6 份项目文档与 `.webgen/config.json`，并在末尾自动调用 `project-verify-scaffold.sh` 自检。
+  - **必须走命令脚本整目录复制**：`sh scripts/project-init.sh <slug> <template-id>`。该脚本以 `cp -R scaffold/. <projectsRoot>/<slug>/` 原子全量复制脚手架，再渲染 6 份项目文档与 `.webgen/config.json`，并在末尾自动调用 `project-verify-scaffold.sh` 自检。
   - **严禁用 `write` / `edit` 逐个“模拟复制”脚手架文件**（`index.html` / `package.json` / `vite.config.js` / `src/**` / `.webgen/config.json` 等）；逐文件手写是上次丢失 `cookie.js` 的根因，一律走脚本。
   - 仅在脚本复制 + 校验通过后，才允许在脚手架基础上改写**页面业务代码**（主要是 `src/generated/page.js` 的页面内容）；项目结构与运行时文件（`src/main.js`、`src/lib/*`、`src/runtime/*`）来自模版，**不得为“页面简单”而删减**。
 - **校验门（强制）**

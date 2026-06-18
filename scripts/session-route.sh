@@ -5,7 +5,8 @@ set -eu
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 SESSION_KEY_SCRIPT="$SCRIPT_DIR/session-key.sh"
 REGISTRY_SCRIPT="$SCRIPT_DIR/session-registry.sh"
-PROJECTS_ROOT="$SCRIPT_DIR/../projects"
+PATHS_SCRIPT="$SCRIPT_DIR/webgen-paths.sh"
+PROJECTS_ROOT=$(sh "$PATHS_SCRIPT" projects-root)
 
 usage() {
   cat <<'EOF' >&2

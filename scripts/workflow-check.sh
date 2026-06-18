@@ -4,7 +4,8 @@ set -eu
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 WORKSPACE_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
-PROJECTS_ROOT="$WORKSPACE_ROOT/projects"
+PATHS_SCRIPT="$SCRIPT_DIR/webgen-paths.sh"
+PROJECTS_ROOT=$(sh "$PATHS_SCRIPT" projects-root)
 VERIFY_SCAFFOLD_SCRIPT="$SCRIPT_DIR/project-verify-scaffold.sh"
 SET_GATE_SCRIPT="$SCRIPT_DIR/workflow-set-gate.sh"
 PAGE_DESIGN_GUARD_SCRIPT="$SCRIPT_DIR/page-design-guard.mjs"

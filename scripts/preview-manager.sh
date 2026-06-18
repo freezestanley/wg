@@ -4,7 +4,8 @@ set -eu
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 WORKSPACE_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
-PROJECTS_ROOT="$WORKSPACE_ROOT/projects"
+PATHS_SCRIPT="$SCRIPT_DIR/webgen-paths.sh"
+PROJECTS_ROOT=$(sh "$PATHS_SCRIPT" projects-root)
 STOP_SCRIPT="$SCRIPT_DIR/project-preview-stop.sh"
 CONFIG_SCRIPT="$SCRIPT_DIR/webgen-config.sh"
 PREVIEW_MAX=$(sh "$CONFIG_SCRIPT" read preview.max 8 WEBGEN_PREVIEW_MAX)

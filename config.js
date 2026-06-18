@@ -1,4 +1,7 @@
 module.exports = {
+  paths: {
+    projectsRoot: "~/claw-workspace/projects"
+  },
   preview: {
     max: 3,
     ttlMinutes: 15
