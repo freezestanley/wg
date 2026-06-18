@@ -42,6 +42,7 @@ const gates = {
   implementation: "Pending",
   verification: "Pending",
   designReview: "Pending",
+  publish: "Pending",
   ...(workflow.gates || {})
 };
 
@@ -71,6 +72,7 @@ const lines = [
   `implementation: ${gates.implementation}`,
   `verification: ${gates.verification}`,
   `designReview: ${gates.designReview}`,
+  `publish: ${gates.publish}`,
   `discovery: ${discoveryState}`
 ];
 

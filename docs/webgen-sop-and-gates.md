@@ -19,6 +19,7 @@
 4. `implementation`
 5. `verification`
 6. `design-review`
+7. `publish`（可选，仅用户明确要求发布时进入）
 
 推荐流转：
 
@@ -29,6 +30,7 @@ routing
   → implementation
   → verification
   → design-review
+  → publish（可选）
 ```
 
 补充说明：
@@ -46,6 +48,7 @@ routing
 - `Implementation Gate`
 - `Verification Gate`
 - `Design Review Gate`
+- `Publish Gate`
 
 ### Gate 状态枚举
 
@@ -72,7 +75,8 @@ routing
 | `proposal` | `Proposal Gate` | `implementation` |
 | `implementation` | `Implementation Gate` | `verification` |
 | `verification` | `Verification Gate` | `design-review` |
-| `design-review` | `Design Review Gate` | 完成 |
+| `design-review` | `Design Review Gate` | 完成或 `publish` |
+| `publish` | `Publish Gate` | 完成 |
 
 ---
 
@@ -234,11 +238,42 @@ routing
 
 ---
 
+### 7. `publish`（可选）
+
+目标：在交付已完成的前提下，按用户明确意愿决定是否发布当前构建包。
+
+固定追问口径：
+
+```text
+当前项目已验收通过，是否立即发布当前构建包？请回复“发布”或“不发布”。
+```
+
+必须规则：
+
+- 用户未明确回复 `发布` 前，不得进入发布动作，不得调用外部发布接口
+- 用户明确回复 `不发布` 时，`Publish Gate = Exception-Pass`
+- 用户明确回复 `发布` 后，才允许进入发布动作
+- 发布接口路径与上传字段参数统一从 workspace 级 `.openclaw/webgen-config.json` 读取；不得在脚本或项目文档中写死这些配置
+
+`Publish Gate` 通过条件：
+
+- 用户明确回复 `发布`，且发布结果已记录为成功或已受理，或
+- 用户明确回复 `不发布`，并已记录为 `Exception-Pass`
+
+未通过时：
+
+- 不影响已完成的交付状态
+- 但不得对外宣称“发布完成”
+
+---
+
 ## 六、最小强制规则
 
 - `Proposal Gate` 未通过：不得写页面业务代码
 - `Verification Gate` 未通过：不得宣称“验证完成”
 - `Design Review Gate` 未通过：不得宣称“验证完成”或“交付完成”
+- 用户未明确回复 `发布`：不得调用发布接口或宣称“发布完成”
+- `Publish Gate` 未通过：不得宣称“发布完成”
 
 ---
 
@@ -252,6 +287,7 @@ routing
 - 方案确认状态
 - 验证状态
 - 设计复核状态
+- 发布状态
 
 ### `DISCOVERY.md`
 
@@ -271,6 +307,7 @@ routing
 - 最近改动
 - 下一步动作
 - 当前是否卡在 proposal / verification / design-review
+- 若已进入交付收口，记录用户对“发布 / 不发布”的最新明确答复
 
 ---
 
@@ -302,5 +339,9 @@ routing
 3. 已完成一次实际验证
 4. 已完成一次页面实看设计复核
 5. 项目文档已同步
+
+若涉及发布，再补一条：
+
+6. 只有在用户明确回复 `发布` 且 `Publish Gate` 通过后，才可宣称“发布完成”
 
 这样 `webgen` 的状态表达就能和真实执行对齐，不再出现“治理层很复杂，但模板和页面还很弱”的失衡。

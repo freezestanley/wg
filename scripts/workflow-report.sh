@@ -33,16 +33,17 @@ APPROVAL_FILE="$PROJECT_ROOT/.webgen/approval.json"
 VERIFICATION_FILE="$PROJECT_ROOT/.webgen/checks/verification.json"
 DELIVERY_FILE="$PROJECT_ROOT/.webgen/checks/delivery.json"
 DESIGN_REVIEW_FILE="$PROJECT_ROOT/.webgen/checks/design-review.json"
+PUBLISH_FILE="$PROJECT_ROOT/.webgen/checks/publish.json"
 
 [ -f "$STATE_FILE" ] || {
   echo "Workflow state not found: $STATE_FILE" >&2
   exit 1
 }
 
-node - "$SLUG" "$PROJECT_ROOT" "$STATE_FILE" "$APPROVAL_FILE" "$VERIFICATION_FILE" "$DELIVERY_FILE" "$DESIGN_REVIEW_FILE" "$VERBOSE" <<'NODE'
+node - "$SLUG" "$PROJECT_ROOT" "$STATE_FILE" "$APPROVAL_FILE" "$VERIFICATION_FILE" "$DELIVERY_FILE" "$DESIGN_REVIEW_FILE" "$PUBLISH_FILE" "$VERBOSE" <<'NODE'
 const fs = require('fs');
 
-const [slug, projectRoot, stateFile, approvalFile, verificationFile, deliveryFile, designReviewFile, verboseFlag] = process.argv.slice(2);
+const [slug, projectRoot, stateFile, approvalFile, verificationFile, deliveryFile, designReviewFile, publishFile, verboseFlag] = process.argv.slice(2);
 const verbose = verboseFlag === '1';
 
 const readJson = (file, fallback) => {
@@ -58,6 +59,7 @@ const approval = readJson(approvalFile, { confirmed: false, confirmedAt: null, s
 const verification = readJson(verificationFile, { status: 'pending', checkedAt: null, notes: null });
 const delivery = readJson(deliveryFile, { status: 'pending', checkedAt: null, missing: [], warnings: [] });
 const designReview = readJson(designReviewFile, { status: 'pending', checkedAt: null, notes: null });
+const publish = readJson(publishFile, { status: 'pending', checkedAt: null, notes: null, gate: 'Pending' });
 
 const gateOrder = [
   ['route', 'Route Gate'],
@@ -65,7 +67,8 @@ const gateOrder = [
   ['proposal', 'Proposal Gate'],
   ['implementation', 'Implementation Gate'],
   ['verification', 'Verification Gate'],
-  ['designReview', 'Design Review Gate']
+  ['designReview', 'Design Review Gate'],
+  ['publish', 'Publish Gate']
 ];
 
 const nextStepByStage = {
@@ -74,7 +77,8 @@ const nextStepByStage = {
   proposal: ['输出方案并获得确认，或记录直接做例外'],
   implementation: ['继续页面实现', '补齐关键交互与四类状态'],
   verification: ['执行 build / preview / scaffold 校验', '记录验证结果'],
-  'design-review': ['执行页面实看与设计复核', '必要时继续优化一轮']
+  'design-review': ['执行页面实看与设计复核', '必要时继续优化一轮'],
+  publish: ['确认用户是否明确回复“发布”', '调用发布脚本并记录结果']
 };
 
 const gates = {
@@ -84,6 +88,7 @@ const gates = {
   implementation: 'Pending',
   verification: 'Pending',
   designReview: 'Pending',
+  publish: 'Pending',
   ...(state.gates || {})
 };
 
@@ -102,6 +107,15 @@ const designReviewStatus = designReview.status !== 'pending'
     : gates.designReview === 'Fail'
       ? 'failed-by-gate'
       : 'pending';
+const publishStatus = publish.status !== 'pending'
+  ? publish.status
+  : gates.publish === 'Pass'
+    ? 'passed-by-gate'
+    : gates.publish === 'Exception-Pass'
+      ? 'exception-pass'
+      : gates.publish === 'Fail'
+        ? 'failed-by-gate'
+        : 'pending';
 const blockers = [];
 for (const [key, label] of gateOrder) {
   if (gates[key] === 'Fail') blockers.push(`${label}: ${notes[key] || '未记录原因'}`);
@@ -122,6 +136,7 @@ if (!verbose) {
   lines.push(`approval: ${approvalStatus}`);
   lines.push(`verification: ${verificationStatus}`);
   lines.push(`design-review: ${designReviewStatus}`);
+  lines.push(`publish: ${publishStatus}`);
   lines.push(`gates: ${gateOrder.map(([key]) => `${key}=${gates[key]}`).join(' ')}`);
   lines.push(`next: ${nextSteps.join('；')}`);
   if (blockers.length) {
@@ -142,6 +157,7 @@ lines.push(`- 最近更新时间：${state.updatedAt || '未知'}`);
 lines.push(`- 方案确认：${approval.confirmed ? `已确认（${approval.confirmedAt || '时间未知'}）` : gates.proposal === 'Exception-Pass' ? '例外通过' : '待确认'}`);
 lines.push(`- 验证状态：${verificationStatus}`);
 lines.push(`- 设计复核：${designReviewStatus}`);
+lines.push(`- 发布状态：${publishStatus}`);
 lines.push('');
 lines.push('## Gates');
 for (const [key, label] of gateOrder) {
@@ -174,6 +190,26 @@ if (designReview.notes) {
   lines.push('');
   lines.push('## Design Review Notes');
   lines.push(`- ${designReview.notes}`);
+}
+if (publish.notes) {
+  lines.push('');
+  lines.push('## Publish Notes');
+  lines.push(`- ${publish.notes}`);
+}
+if (publish.status !== 'pending') {
+  const publishDetails = [];
+  if (publish.jobId) publishDetails.push(`- jobId: ${publish.jobId}`);
+  if (publish.pollUrl) publishDetails.push(`- pollUrl: ${publish.pollUrl}`);
+  if (publish.endpoint) publishDetails.push(`- endpoint: ${publish.endpoint}`);
+  if (publish.publishedUrl) publishDetails.push(`- publishedUrl: ${publish.publishedUrl}`);
+  if (publish.remoteStatus !== undefined && publish.remoteStatus !== null) {
+    publishDetails.push(`- remoteStatus: ${publish.remoteStatus}`);
+  }
+  if (publishDetails.length) {
+    lines.push('');
+    lines.push('## Publish Detail');
+    for (const item of publishDetails) lines.push(item);
+  }
 }
 
 process.stdout.write(lines.join('\n') + '\n');

@@ -68,6 +68,9 @@
 - 当项目风格逐渐稳定时，可在 `skills/impeccable` 体系内使用 `teach-impeccable` 记录风格约束，供后续迭代复用。
 - CDP 截图验证默认关闭跳过；只有用户明确要求截图验收时，才执行 CDP 访问与截图落盘。默认验收以实际预览验证与页面实看设计复核为准。
 - 当用户明确要求截图验收时，CDP 只尝试一次；若本次尝试失败，则记录为“截图验收已跳过”，不阻塞验证完成或交付完成。
+- 当项目已验收通过、且进入交付收口后，若存在发布能力，必须先追问用户：`当前项目已验收通过，是否立即发布当前构建包？请回复“发布”或“不发布”。`
+- 用户未明确回复 `发布` 前，禁止进入发布阶段或调用任何外部发布接口；用户回复 `不发布` 时，发布阶段记为 `Exception-Pass`，不阻塞交付完成。
+- 发布接口路径、上传字段参数、鉴权与超时等发布配置统一从 workspace 级 `.openclaw/webgen-config.json` 读取；禁止把这些信息硬编码在脚本、模板消息或项目文档里。
 - 读取 skill 时，webgen 一律优先从 `workspace/skills/<skill-name>/SKILL.md` 读取；禁止拼接出重复的 workspace 绝对路径。若该目录不存在，再回退到系统提供的 skill 原始 location。
 - 所有 landing page / 营销站 / 作品集 / 重设计类页面，在进入最终页面实现前，必须先形成一行 `Design Read`，确定 `DESIGN_VARIANCE / MOTION_INTENSITY / VISUAL_DENSITY` 三档位，并声明 `Atmosphere Layer`（`none / subtle / signature`）；结论写入 `DISCOVERY.md`。
 - 默认必须补齐核心交互状态：`Loading / Empty / Error / Active Feedback`。
@@ -353,6 +356,7 @@
   4. `implementation`
   5. `verification`
   6. `design-review`
+  7. `publish`（可选，仅用户明确要求发布时进入）
 
 - **默认 Gate 集合**
   - `Route Gate`
@@ -361,6 +365,7 @@
   - `Implementation Gate`
   - `Verification Gate`
   - `Design Review Gate`
+  - `Publish Gate`
 
 - **Gate 状态枚举**
   - `Pass`
@@ -375,6 +380,7 @@
   - `implementation` → `Implementation Gate`
   - `verification` → `Verification Gate`
   - `design-review` → `Design Review Gate`
+  - `publish` → `Publish Gate`
 
 - **硬门说明**
   - `Route Gate`：已明确 `slug / sessionKey / mode`
@@ -383,11 +389,14 @@
   - `Implementation Gate`：页面主体、关键交互、核心状态已具备
   - `Verification Gate`：已完成至少一次实际预览 / 构建 / 运行验证
   - `Design Review Gate`：已完成页面实看验收，并记录是否还需继续优化
+  - `Publish Gate`：用户已明确回复 `发布` 并完成发布，或用户明确回复 `不发布` 记为 `Exception-Pass`
 
 - **强制规则**
   - `Proposal Gate` 未通过：不得写页面业务代码
   - `Verification Gate` 未通过：不得宣告“验证完成”
   - `Design Review Gate` 未通过：不得宣告“验证完成”或“交付完成”
+  - 用户未明确回复 `发布`：不得调用外部发布接口或宣告“发布完成”
+  - `Publish Gate` 未通过：不得宣告“发布完成”
   - 复杂需求仍可先走 `superpowers` 规划，但不再额外引入不可执行的大量中间门
 
 ### SO-010a: 进度汇报与状态落盘一致性（禁止口头超前）
@@ -408,12 +417,14 @@
   - 若记录仍停留在 `implementation`，禁止口头说“正在验证”；最多只能说“实现完成，尚未记录 verification，下一步是启动验证”。
   - 若 `verification.json` 仍是 `pending`，禁止说“验证完成”。
   - 若 `design-review` 仍未通过，禁止说“交付完成”。
+  - 若用户尚未明确回复 `发布`，或 `publish` 仍未通过，禁止说“发布完成”。
 - **动作完成后的强制同步点**
   - 完成 Discovery 收口后：立刻更新 proposal 前置状态与设计方向摘要。
   - 开始实现前：必须通过 `workflow-enter-implementation.sh` 或等价脚本进入 `implementation`。
   - 开始验证前：必须先执行 `workflow-check.sh <slug> start-verification`，随后再做预览 / build / 校验。
   - 完成验证后：必须立刻执行 `workflow-record-verification.sh` 记录 passed / failed。
   - 完成页面实看与设计复核后：必须同步设计复核结果，再对外宣称完成。
+  - 若用户明确回复 `发布`：必须先记录进入 `publish`，再执行发布动作并同步发布结果。
 - **进度口径优先级**
   - 对外简报一律以 `workflow-state.json` 当前阶段为准，而不是以记忆、意图、后台命令计划为准。
   - 若真实动作已经发生但尚未落盘，正确说法只能是“刚完成动作，正在同步状态”，不能跳过落盘直接报结果。

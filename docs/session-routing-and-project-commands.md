@@ -18,6 +18,8 @@
 - `scripts/project-preview-stop.sh`
 - `scripts/project-preview-status.sh`
 - `scripts/project-package.sh`
+- `scripts/project-publish.sh`
+- `scripts/project-publish-status.sh`
 - `scripts/preview-manager.sh`
 
 ### session 路由
@@ -101,6 +103,8 @@ slug=demo
 ./scripts/project-preview-status.sh <slug> [--verbose]
 ./scripts/project-preview-stop.sh <slug>
 ./scripts/project-package.sh <slug>
+./scripts/project-publish.sh <slug>
+./scripts/project-publish-status.sh <slug>
 zsh ./scripts/preview-manager.sh list
 zsh ./scripts/preview-manager.sh pin <slug>
 zsh ./scripts/preview-manager.sh unpin <slug>
@@ -111,6 +115,7 @@ zsh ./scripts/preview-manager.sh gc
 - `project-preview.sh` 启动前会自动做 `reap + gc + ensure-capacity`，优先回收旧预览、释放端口。
 - `workflow-deliver.sh` 完成后默认只保留当前项目预览，其它未 pin 预览会自动关闭。
 - 预览治理默认值统一来自 `.openclaw/webgen-config.json`；环境变量如 `WEBGEN_PREVIEW_MAX` 只作为临时覆盖层。
+- 发布接口路径、上传字段参数、异步降级参数与轮询地址字段统一来自 `.openclaw/webgen-config.json`，项目脚本不写死。
 
 ## 当前实现约定
 
@@ -307,6 +312,8 @@ slug: demo-brand-site
 | 启动预览 | `project-preview.sh` |
 | 查询预览状态 | `project-preview-status.sh` |
 | 停止预览 | `project-preview-stop.sh` |
+| 上传发布包 | `project-publish.sh` |
+| 轮询发布状态 | `project-publish-status.sh` |
 | 查看预览总表 | `preview-manager.sh list` |
 | 查看当前预览限制 | `preview-manager.sh limits` |
 | 固定保留预览 | `preview-manager.sh pin` |
@@ -332,6 +339,36 @@ slug: demo-brand-site
 3. `new`：`project-init.sh` + `session-lock.sh init`
 4. `resume`：先跑 `project-session-entry.sh`，优先看 `.webgen/context-summary.txt` 与 `.webgen/discovery-gap.txt`，再按需补读项目文档
 5. 实现后走 preview / verify / package
+
+#### publish 收口侧
+1. `workflow-deliver.sh` 完成后，先追问用户是否发布
+2. 用户明确回复 `不发布`：
+
+```sh
+./scripts/workflow-record-publish.sh <slug> skipped "用户选择不发布"
+```
+
+3. 用户明确回复 `发布`：
+
+```sh
+./scripts/workflow-record-publish.sh <slug> publish
+```
+
+4. 若上一步返回 `queued`，后续可轮询：
+
+```sh
+./scripts/project-publish-status.sh <slug>
+```
+
+5. 发布相关配置统一从 `.openclaw/webgen-config.json` 读取：
+   - `publish.endpoint`
+   - `publish.timeoutMs`
+   - `publish.fileField`
+   - `publish.metadataField`
+   - `publish.asyncFallback`
+   - `publish.asyncFlagField`
+   - `publish.statusUrlField`
+   - 若远端接口是纯文件上传（如 `POST /upload` 返回 `files[].path`），可将 `publish.metadataField` 留空；脚本会只上传 zip 文件，并把首个 `files[].path` 归一成 `publishedUrl`
 
 #### compact 消费侧
 1. 阶段切换脚本会写 `projects/<slug>/.webgen/compact-request.json`

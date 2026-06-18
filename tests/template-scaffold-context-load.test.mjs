@@ -20,19 +20,27 @@ const RESUME_CONTEXT_SCRIPT = join(WORKSPACE_ROOT, "scripts/project-resume-conte
 const SESSION_ENTRY_SCRIPT = join(WORKSPACE_ROOT, "scripts/project-session-entry.sh");
 const SESSION_RECOVER_SCRIPT = join(WORKSPACE_ROOT, "scripts/session-recover.sh");
 const WORKFLOW_REPORT_SCRIPT = join(WORKSPACE_ROOT, "scripts/workflow-report.sh");
+const WORKFLOW_ANNOUNCE_SCRIPT = join(WORKSPACE_ROOT, "scripts/workflow-announce-status.sh");
 const COMPACT_REQUEST_SCRIPT = join(WORKSPACE_ROOT, "scripts/workflow-request-compact.sh");
 const COMPACT_HANDLE_SCRIPT = join(WORKSPACE_ROOT, "scripts/workflow-handle-compact.sh");
 const COMPACT_INSPECT_SCRIPT = join(WORKSPACE_ROOT, "scripts/workflow-inspect-compact-request.sh");
+const PROJECT_PUBLISH_SCRIPT = join(WORKSPACE_ROOT, "scripts/project-publish.sh");
+const PROJECT_PUBLISH_STATUS_SCRIPT = join(WORKSPACE_ROOT, "scripts/project-publish-status.sh");
+const WORKFLOW_RECORD_PUBLISH_SCRIPT = join(WORKSPACE_ROOT, "scripts/workflow-record-publish.sh");
 const PREVIEW_STATUS_SCRIPT = join(WORKSPACE_ROOT, "scripts/project-preview-status.sh");
 const PREVIEW_SCRIPT = join(WORKSPACE_ROOT, "scripts/project-preview.sh");
 const DESIGN_REVIEW_SCRIPT = join(WORKSPACE_ROOT, "scripts/project-design-review.sh");
 const PREVIEW_MANAGER_SCRIPT = join(WORKSPACE_ROOT, "scripts/preview-manager.sh");
-const GLOBAL_CONFIG_FILE = join(WORKSPACE_ROOT, ".openclaw", "webgen-config.json");
+const GLOBAL_CONFIG_FILE = join(WORKSPACE_ROOT, "config.js");
 const ROUTING_TEMPLATE_FILE = join(WORKSPACE_ROOT, "docs", "webgen-routing-message-templates.md");
 const ERROR_HANDLING_FILE = join(WORKSPACE_ROOT, "docs", "webgen-session-error-handling.md");
 const SOP_GATES_FILE = join(WORKSPACE_ROOT, "docs", "webgen-sop-and-gates.md");
 const CHANGE_LOG_FILE = join(WORKSPACE_ROOT, "docs", "webgen-skill-change-log.md");
 const DESIGN_HARD_CHECKS_FILE = join(WORKSPACE_ROOT, "docs", "plans", "2026-06-16-webgen-design-hard-checks.md");
+
+function writeWorkspaceConfig(config) {
+  writeFileSync(GLOBAL_CONFIG_FILE, `module.exports = ${JSON.stringify(config, null, 2)};\n`);
+}
 
 test("vite-page scaffold manifest excludes heavy generated assets", () => {
   assert.equal(existsSync(MANIFEST_FILE), true, "missing scaffold manifest");
@@ -177,7 +185,7 @@ test("workflow sync writes compact context summary file", () => {
     writeFileSync(join(root, "HANDOFF.md"), "# Demo\n\n## 当前状态\n\n- 待同步\n\n## 当前 Workflow / Gates\n\n- 待同步\n\n## 最近改动\n\n- 待同步\n\n## 下一步\n\n- 待同步\n");
     writeFileSync(join(root, "DISCOVERY.md"), "# Discovery\n\n## Ready / Not Ready\n\n- 当前状态：`Ready`\n");
 
-    const slug = "context-sync-test";
+    const slug = `context-sync-test-${Date.now()}`;
     const projectRoot = join(WORKSPACE_ROOT, "projects", slug);
     execFileSync("mkdir", ["-p", projectRoot], { cwd: WORKSPACE_ROOT });
     execFileSync("cp", ["-R", `${root}/.`, projectRoot], { cwd: WORKSPACE_ROOT });
@@ -755,12 +763,419 @@ test("workflow report defaults to compact summary lines", () => {
     assert.match(output, /^approval: pending$/m);
     assert.match(output, /^verification: pending$/m);
     assert.match(output, /^design-review: pending$/m);
-    assert.match(output, /^gates: route=Pass session=Pending proposal=Pending implementation=Pending verification=Pending designReview=Pending$/m);
+    assert.match(output, /^publish: pending$/m);
+    assert.match(output, /^gates: route=Pass session=Pending proposal=Pending implementation=Pending verification=Pending designReview=Pending publish=Pending$/m);
     assert.match(output, /^next: .*discovery-gap.*一次补齐 Discovery/m);
     assert.equal(output.includes("# Workflow Report"), false);
     assert.equal(output.includes("## Gates"), false);
     assert.equal(output.includes("## Next Steps"), false);
   } finally {
+    rmSync(join(WORKSPACE_ROOT, "projects", slug), { recursive: true, force: true });
+  }
+});
+
+test("workflow report verbose shows queued publish details", () => {
+  const slug = `workflow-report-publish-${Date.now()}`;
+
+  try {
+    execFileSync("sh", ["scripts/project-init.sh", slug, "vite-page"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    execFileSync("node", ["-e", `
+      const fs=require("fs");
+      const stateFile=process.argv[1];
+      const publishFile=process.argv[2];
+      const state=JSON.parse(fs.readFileSync(stateFile,"utf8"));
+      state.currentStage = "publish";
+      state.gates = { ...(state.gates||{}), proposal:"Pass", verification:"Pass", designReview:"Pass", publish:"Pass" };
+      state.notes = { ...(state.notes||{}), publish:"异步发布已入队" };
+      fs.writeFileSync(stateFile, JSON.stringify(state, null, 2) + "\\n");
+      fs.writeFileSync(publishFile, JSON.stringify({
+        status:"queued",
+        gate:"Pass",
+        userConfirmed:true,
+        artifact:"/tmp/dist.zip",
+        artifactSha256:"sha-demo",
+        endpoint:"https://publish.example.test/upload",
+        remoteStatus:202,
+        releaseId:null,
+        jobId:"job_demo",
+        pollUrl:"https://publish.example.test/status/job_demo",
+        publishedUrl:null,
+        checkedAt:new Date().toISOString(),
+        publishedAt:null,
+        notes:"已进入发布队列"
+      }, null, 2) + "\\n");
+    `, join(WORKSPACE_ROOT, "projects", slug, ".webgen", "workflow-state.json"), join(WORKSPACE_ROOT, "projects", slug, ".webgen", "checks", "publish.json")], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    const output = execFileSync("sh", [WORKFLOW_REPORT_SCRIPT, slug, "--verbose"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    assert.match(output, /## Publish Notes/);
+    assert.match(output, /已进入发布队列/);
+    assert.match(output, /job_demo/);
+    assert.match(output, /https:\/\/publish\.example\.test\/status\/job_demo/);
+  } finally {
+    rmSync(join(WORKSPACE_ROOT, "projects", slug), { recursive: true, force: true });
+  }
+});
+
+test("workflow announce status shows publish queue and published states", () => {
+  const slug = `workflow-announce-publish-${Date.now()}`;
+
+  try {
+    execFileSync("sh", ["scripts/project-init.sh", slug, "vite-page"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    const stateFile = join(WORKSPACE_ROOT, "projects", slug, ".webgen", "workflow-state.json");
+    const publishFile = join(WORKSPACE_ROOT, "projects", slug, ".webgen", "checks", "publish.json");
+
+    execFileSync("node", ["-e", `
+      const fs=require("fs");
+      const stateFile=process.argv[1];
+      const publishFile=process.argv[2];
+      const state=JSON.parse(fs.readFileSync(stateFile,"utf8"));
+      state.currentStage = "publish";
+      state.gates = { ...(state.gates||{}), publish:"Pass" };
+      fs.writeFileSync(stateFile, JSON.stringify(state, null, 2) + "\\n");
+      fs.writeFileSync(publishFile, JSON.stringify({
+        status:"queued",
+        gate:"Pass",
+        userConfirmed:true,
+        artifact:null,
+        artifactSha256:null,
+        endpoint:"https://publish.example.test/upload",
+        remoteStatus:202,
+        releaseId:null,
+        jobId:"job_demo",
+        pollUrl:"https://publish.example.test/status/job_demo",
+        publishedUrl:null,
+        checkedAt:new Date().toISOString(),
+        publishedAt:null,
+        notes:"已进入发布队列"
+      }, null, 2) + "\\n");
+    `, stateFile, publishFile], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    let output = execFileSync("sh", [WORKFLOW_ANNOUNCE_SCRIPT, slug], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    assert.match(output, /^发布排队中 \/ 尚未完成设计复核 \/ 无阻塞$/m);
+
+    execFileSync("node", ["-e", `
+      const fs=require("fs");
+      const file=process.argv[1];
+      const data=JSON.parse(fs.readFileSync(file,"utf8"));
+      data.status = "published";
+      data.remoteStatus = 200;
+      data.releaseId = "rel_demo";
+      data.publishedUrl = "https://publish.example.test/final";
+      data.publishedAt = new Date().toISOString();
+      fs.writeFileSync(file, JSON.stringify(data, null, 2) + "\\n");
+    `, publishFile], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    output = execFileSync("sh", [WORKFLOW_ANNOUNCE_SCRIPT, slug], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    assert.match(output, /^发布已完成 \/ 尚未完成设计复核 \/ 无阻塞$/m);
+  } finally {
+    rmSync(join(WORKSPACE_ROOT, "projects", slug), { recursive: true, force: true });
+  }
+});
+
+test("workflow record publish marks exception-pass when user chooses not to publish", () => {
+  const slug = `publish-skip-${Date.now()}`;
+
+  try {
+    execFileSync("sh", ["scripts/project-init.sh", slug, "vite-page"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    execFileSync("node", ["-e", `
+      const fs=require("fs");
+      const stateFile=process.argv[1];
+      const reviewFile=process.argv[2];
+      const state=JSON.parse(fs.readFileSync(stateFile,"utf8"));
+      state.currentStage = "design-review";
+      state.gates = { ...(state.gates||{}), proposal:"Pass", verification:"Pass", designReview:"Pass" };
+      fs.writeFileSync(stateFile, JSON.stringify(state, null, 2) + "\\n");
+      fs.writeFileSync(reviewFile, JSON.stringify({ status:"passed", checkedAt:new Date().toISOString(), notes:"ok" }, null, 2) + "\\n");
+    `, join(WORKSPACE_ROOT, "projects", slug, ".webgen", "workflow-state.json"), join(WORKSPACE_ROOT, "projects", slug, ".webgen", "checks", "design-review.json")], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    execFileSync("sh", [WORKFLOW_RECORD_PUBLISH_SCRIPT, slug, "skipped", "用户选择不发布"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    const state = JSON.parse(execFileSync("cat", [join(WORKSPACE_ROOT, "projects", slug, ".webgen", "workflow-state.json")], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    }));
+    const publish = JSON.parse(execFileSync("cat", [join(WORKSPACE_ROOT, "projects", slug, ".webgen", "checks", "publish.json")], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    }));
+
+    assert.equal(state.gates.publish, "Exception-Pass");
+    assert.equal(publish.status, "skipped");
+    assert.equal(publish.userConfirmed, false);
+    assert.equal(publish.gate, "Exception-Pass");
+  } finally {
+    rmSync(join(WORKSPACE_ROOT, "projects", slug), { recursive: true, force: true });
+  }
+});
+
+test("project publish uploads dist zip using endpoint from workspace config", async () => {
+  const slug = `publish-upload-${Date.now()}`;
+  const configBackup = existsSync(GLOBAL_CONFIG_FILE)
+    ? execFileSync("cat", [GLOBAL_CONFIG_FILE], { cwd: WORKSPACE_ROOT, encoding: "utf8" })
+    : null;
+
+  try {
+    const fakeBin = mkdtempSync(join(tmpdir(), "webgen-fake-curl-"));
+    const argsFile = join(fakeBin, "curl-args.txt");
+    writeFileSync(join(fakeBin, "curl"), `#!/bin/sh
+printf '%s\n' "$@" > "$WEBGEN_TEST_CURL_ARGS_FILE"
+printf '%s' '{"success":true,"message":"成功上传 1 个文件","files":[{"originalName":"dist.zip","savedName":"1718000000000_dist.zip","mimetype":"application/zip","size":17,"path":"/uploads/1718000000000_dist.zip"}]}'
+`, { mode: 0o755 });
+
+    writeWorkspaceConfig({
+      preview: { max: 5, ttlMinutes: 60 },
+      publish: {
+        enabled: true,
+        endpoint: "https://publish.example.test/upload",
+        timeoutMs: 30000
+      }
+    });
+
+    execFileSync("sh", ["scripts/project-init.sh", slug, "vite-page"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    const projectRoot = join(WORKSPACE_ROOT, "projects", slug);
+    writeFileSync(join(projectRoot, "dist.zip"), "fake-zip-content\n");
+
+    const output = execFileSync("sh", [PROJECT_PUBLISH_SCRIPT, slug], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        PATH: `${fakeBin}:${process.env.PATH || ""}`,
+        WEBGEN_TEST_CURL_ARGS_FILE: argsFile
+      }
+    });
+
+    const publish = JSON.parse(execFileSync("cat", [join(projectRoot, ".webgen", "checks", "publish.json")], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    }));
+    const curlArgs = existsSync(argsFile)
+      ? execFileSync("cat", [argsFile], { cwd: WORKSPACE_ROOT, encoding: "utf8" })
+      : "";
+
+    assert.match(output, /PUBLISH OK:/);
+    assert.match(curlArgs, /https:\/\/publish\.example\.test\/upload/);
+    assert.match(curlArgs, /file=@/);
+    assert.doesNotMatch(curlArgs, /metadata=/);
+    assert.match(curlArgs, /dist\.zip/);
+    assert.equal(publish.status, "published");
+    assert.equal(publish.remoteStatus, 201);
+    assert.equal(publish.releaseId, null);
+    assert.equal(publish.endpoint, "https://publish.example.test/upload");
+    assert.equal(publish.publishedUrl, "https://publish.example.test/uploads/1718000000000_dist.zip");
+  } finally {
+    if (configBackup === null) {
+      rmSync(GLOBAL_CONFIG_FILE, { force: true });
+    } else {
+      writeFileSync(GLOBAL_CONFIG_FILE, configBackup);
+    }
+    rmSync(join(WORKSPACE_ROOT, "projects", slug), { recursive: true, force: true });
+  }
+});
+
+test("project publish falls back to async request when sync upload fails", () => {
+  const slug = `publish-fallback-${Date.now()}`;
+  const configBackup = existsSync(GLOBAL_CONFIG_FILE)
+    ? execFileSync("cat", [GLOBAL_CONFIG_FILE], { cwd: WORKSPACE_ROOT, encoding: "utf8" })
+    : null;
+
+  try {
+    const fakeBin = mkdtempSync(join(tmpdir(), "webgen-fake-curl-fallback-"));
+    const argsFile = join(fakeBin, "curl-args.txt");
+    const countFile = join(fakeBin, "curl-count.txt");
+    writeFileSync(join(fakeBin, "curl"), `#!/bin/sh
+count=0
+if [ -f "$WEBGEN_TEST_CURL_COUNT_FILE" ]; then
+  count=$(cat "$WEBGEN_TEST_CURL_COUNT_FILE")
+fi
+count=$((count+1))
+printf '%s' "$count" > "$WEBGEN_TEST_CURL_COUNT_FILE"
+printf 'CALL-%s\n' "$count" >> "$WEBGEN_TEST_CURL_ARGS_FILE"
+printf '%s\n' "$@" >> "$WEBGEN_TEST_CURL_ARGS_FILE"
+if [ "$count" -eq 1 ]; then
+  exit 22
+fi
+printf '%s' '{"status":"queued","jobId":"job_test","pollUrl":"https://example.test/queue/status/job_test","url":"https://example.test/queue"}'
+`, { mode: 0o755 });
+
+    writeWorkspaceConfig({
+      preview: { max: 5, ttlMinutes: 60 },
+      publish: {
+        enabled: true,
+        endpoint: "https://publish.example.test/upload",
+        timeoutMs: 30000,
+        fileField: "artifactFile",
+        metadataField: "publishMeta",
+        asyncFallback: true,
+        asyncFlagField: "preferAsync",
+        statusUrlField: "pollUrl"
+      }
+    });
+
+    execFileSync("sh", ["scripts/project-init.sh", slug, "vite-page"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    const projectRoot = join(WORKSPACE_ROOT, "projects", slug);
+    writeFileSync(join(projectRoot, "dist.zip"), "fake-zip-content\n");
+
+    const output = execFileSync("sh", [PROJECT_PUBLISH_SCRIPT, slug], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        PATH: `${fakeBin}:${process.env.PATH || ""}`,
+        WEBGEN_TEST_CURL_ARGS_FILE: argsFile,
+        WEBGEN_TEST_CURL_COUNT_FILE: countFile
+      }
+    });
+
+    const publish = JSON.parse(execFileSync("cat", [join(projectRoot, ".webgen", "checks", "publish.json")], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    }));
+    const curlArgs = existsSync(argsFile)
+      ? execFileSync("cat", [argsFile], { cwd: WORKSPACE_ROOT, encoding: "utf8" })
+      : "";
+
+    assert.match(output, /PUBLISH OK:/);
+    assert.match(curlArgs, /CALL-1/);
+    assert.match(curlArgs, /CALL-2/);
+    assert.match(curlArgs, /preferAsync=true/);
+    assert.equal(publish.status, "queued");
+    assert.equal(publish.remoteStatus, 202);
+    assert.equal(publish.jobId, "job_test");
+    assert.equal(publish.pollUrl, "https://example.test/queue/status/job_test");
+    assert.equal(publish.endpoint, "https://publish.example.test/upload");
+  } finally {
+    if (configBackup === null) {
+      rmSync(GLOBAL_CONFIG_FILE, { force: true });
+    } else {
+      writeFileSync(GLOBAL_CONFIG_FILE, configBackup);
+    }
+    rmSync(join(WORKSPACE_ROOT, "projects", slug), { recursive: true, force: true });
+  }
+});
+
+test("project publish status polls queued job and records published result", () => {
+  const slug = `publish-status-${Date.now()}`;
+  const configBackup = existsSync(GLOBAL_CONFIG_FILE)
+    ? execFileSync("cat", [GLOBAL_CONFIG_FILE], { cwd: WORKSPACE_ROOT, encoding: "utf8" })
+    : null;
+
+  try {
+    const fakeBin = mkdtempSync(join(tmpdir(), "webgen-fake-curl-status-"));
+    const argsFile = join(fakeBin, "curl-args.txt");
+    writeFileSync(join(fakeBin, "curl"), `#!/bin/sh
+printf '%s\n' "$@" > "$WEBGEN_TEST_CURL_ARGS_FILE"
+printf '%s' '{"status":"published","releaseId":"rel_polled","url":"https://example.test/release/final"}'
+`, { mode: 0o755 });
+
+    writeWorkspaceConfig({
+      preview: { max: 5, ttlMinutes: 60 },
+      publish: {
+        enabled: true,
+        endpoint: "https://publish.example.test/upload",
+        timeoutMs: 30000,
+        statusUrlField: "pollUrl"
+      }
+    });
+
+    execFileSync("sh", ["scripts/project-init.sh", slug, "vite-page"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    const projectRoot = join(WORKSPACE_ROOT, "projects", slug);
+    writeFileSync(join(projectRoot, ".webgen", "checks", "publish.json"), JSON.stringify({
+      status: "queued",
+      gate: "Pass",
+      userConfirmed: true,
+      artifact: join(projectRoot, "dist.zip"),
+      artifactSha256: "abc",
+      endpoint: "https://publish.example.test/upload",
+      remoteStatus: 202,
+      releaseId: null,
+      jobId: "job_test",
+      pollUrl: "https://example.test/queue/status/job_test",
+      publishedUrl: null,
+      checkedAt: new Date().toISOString(),
+      publishedAt: null,
+      notes: null
+    }, null, 2) + "\n");
+
+    const output = execFileSync("sh", [PROJECT_PUBLISH_STATUS_SCRIPT, slug], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        PATH: `${fakeBin}:${process.env.PATH || ""}`,
+        WEBGEN_TEST_CURL_ARGS_FILE: argsFile
+      }
+    });
+
+    const publish = JSON.parse(execFileSync("cat", [join(projectRoot, ".webgen", "checks", "publish.json")], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    }));
+    const curlArgs = existsSync(argsFile)
+      ? execFileSync("cat", [argsFile], { cwd: WORKSPACE_ROOT, encoding: "utf8" })
+      : "";
+
+    assert.match(output, /PUBLISH STATUS OK:/);
+    assert.match(curlArgs, /https:\/\/example\.test\/queue\/status\/job_test/);
+    assert.equal(publish.status, "published");
+    assert.equal(publish.remoteStatus, 200);
+    assert.equal(publish.releaseId, "rel_polled");
+    assert.equal(publish.publishedUrl, "https://example.test/release/final");
+  } finally {
+    if (configBackup === null) {
+      rmSync(GLOBAL_CONFIG_FILE, { force: true });
+    } else {
+      writeFileSync(GLOBAL_CONFIG_FILE, configBackup);
+    }
     rmSync(join(WORKSPACE_ROOT, "projects", slug), { recursive: true, force: true });
   }
 });
@@ -1004,19 +1419,12 @@ test("preview manager reads capacity limits from global config with env override
     : null;
 
   try {
-    writeFileSync(
-      GLOBAL_CONFIG_FILE,
-      JSON.stringify(
-        {
-          preview: {
-            max: 3,
-            ttlMinutes: 15
-          }
-        },
-        null,
-        2
-      ) + "\n"
-    );
+    writeWorkspaceConfig({
+      preview: {
+        max: 3,
+        ttlMinutes: 15
+      }
+    });
 
     const configured = execFileSync("zsh", [PREVIEW_MANAGER_SCRIPT, "limits"], {
       cwd: WORKSPACE_ROOT,
@@ -1049,6 +1457,10 @@ test("project preview enforces capacity by stopping stale unpinned previews befo
   const oldSlug = `preview-old-${Date.now()}`;
   const recentSlug = `preview-recent-${Date.now()}`;
   const targetSlug = `preview-target-${Date.now()}`;
+  const registryFile = join(WORKSPACE_ROOT, ".openclaw", "preview-registry.json");
+  const registryBackup = existsSync(registryFile)
+    ? execFileSync("cat", [registryFile], { cwd: WORKSPACE_ROOT, encoding: "utf8" })
+    : null;
 
   try {
     for (const slug of [oldSlug, recentSlug, targetSlug]) {
@@ -1091,14 +1503,15 @@ test("project preview enforces capacity by stopping stale unpinned previews befo
     execFileSync("node", ["-e", `
       const fs=require("fs");
       const file=process.argv[1];
+      const now=new Date().toISOString();
       const data=JSON.parse(fs.readFileSync(file,"utf8"));
-      data.items = data.items.map((item) => {
+      data.items = data.items.filter((item) => item.slug.includes("old-") || item.slug.includes("recent-")).map((item) => {
         if (item.slug.includes("old-")) item.lastSeenAt = "2026-01-01T00:00:00.000Z";
-        if (item.slug.includes("recent-")) item.lastSeenAt = "2026-06-16T00:00:00.000Z";
+        if (item.slug.includes("recent-")) item.lastSeenAt = now;
         return item;
       });
       fs.writeFileSync(file, JSON.stringify(data, null, 2) + "\\n");
-    `, join(WORKSPACE_ROOT, ".openclaw", "preview-registry.json")], {
+    `, registryFile], {
       cwd: WORKSPACE_ROOT,
       encoding: "utf8"
     });
@@ -1127,6 +1540,11 @@ test("project preview enforces capacity by stopping stale unpinned previews befo
     assert.equal(oldState.preview.state.status, "stopped");
     assert.equal(recentState.preview.state.status, "running");
   } finally {
+    if (registryBackup === null) {
+      rmSync(registryFile, { force: true });
+    } else {
+      writeFileSync(registryFile, registryBackup);
+    }
     rmSync(join(WORKSPACE_ROOT, "projects", oldSlug), { recursive: true, force: true });
     rmSync(join(WORKSPACE_ROOT, "projects", recentSlug), { recursive: true, force: true });
     rmSync(join(WORKSPACE_ROOT, "projects", targetSlug), { recursive: true, force: true });

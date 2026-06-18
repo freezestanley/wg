@@ -30,6 +30,7 @@ APPROVAL_FILE="$PROJECT_ROOT/.webgen/approval.json"
 VERIFICATION_FILE="$PROJECT_ROOT/.webgen/checks/verification.json"
 DELIVERY_FILE="$PROJECT_ROOT/.webgen/checks/delivery.json"
 DESIGN_REVIEW_FILE="$PROJECT_ROOT/.webgen/checks/design-review.json"
+PUBLISH_FILE="$PROJECT_ROOT/.webgen/checks/publish.json"
 SUMMARY_FILE="$PROJECT_ROOT/.webgen/context-summary.txt"
 SUMMARY_SCRIPT="$SCRIPT_DIR/project-context-summary.mjs"
 DISCOVERY_GAP_FILE="$PROJECT_ROOT/.webgen/discovery-gap.txt"
@@ -40,9 +41,9 @@ DISCOVERY_GAP_SCRIPT="$SCRIPT_DIR/project-discovery-gap.mjs"
   exit 1
 }
 
-node - "$PROJECT_FILE" "$HANDOFF_FILE" "$STATE_FILE" "$APPROVAL_FILE" "$VERIFICATION_FILE" "$DELIVERY_FILE" "$DESIGN_REVIEW_FILE" "$NOTE" <<'NODE'
+node - "$PROJECT_FILE" "$HANDOFF_FILE" "$STATE_FILE" "$APPROVAL_FILE" "$VERIFICATION_FILE" "$DELIVERY_FILE" "$DESIGN_REVIEW_FILE" "$PUBLISH_FILE" "$NOTE" <<'NODE'
 const fs = require('fs');
-const [projectFile, handoffFile, stateFile, approvalFile, verificationFile, deliveryFile, designReviewFile, note] = process.argv.slice(2);
+const [projectFile, handoffFile, stateFile, approvalFile, verificationFile, deliveryFile, designReviewFile, publishFile, note] = process.argv.slice(2);
 
 const readJson = (file, fallback) => {
   try {
@@ -70,7 +71,8 @@ const nextStepByStage = {
   proposal: ['- 完成方案确认或记录直接做例外', '- 通过 Proposal Gate 后进入实现'],
   implementation: ['- 继续页面实现', '- 完成后进入 verification'],
   verification: ['- 完成预览/构建验证', '- 记录验证结果'],
-  'design-review': ['- 完成页面实看设计复核', '- 记录是否还需继续优化']
+  'design-review': ['- 完成页面实看设计复核', '- 记录是否还需继续优化'],
+  publish: ['- 确认用户是否明确回复“发布”', '- 记录发布结果']
 };
 
 const state = readJson(stateFile, { currentStage: 'unknown', updatedAt: null, gates: {}, notes: {} });
@@ -81,12 +83,14 @@ const gates = {
   implementation: 'Pending',
   verification: 'Pending',
   designReview: 'Pending',
+  publish: 'Pending',
   ...(state.gates || {})
 };
 const approval = readJson(approvalFile, { confirmed: false });
 const verification = readJson(verificationFile, { status: 'pending', checkedAt: null, notes: null });
 const delivery = readJson(deliveryFile, { status: 'pending', checkedAt: null });
 const designReview = readJson(designReviewFile, { status: 'pending', checkedAt: null, notes: null });
+const publish = readJson(publishFile, { status: 'pending', checkedAt: null, notes: null, gate: 'Pending' });
 
 const approvalText = approval.confirmed
   ? `已确认（${approval.confirmedAt || '时间未知'}）`
@@ -115,6 +119,21 @@ const designReviewText = designReview.status === 'passed'
       : gates.designReview === 'Fail'
         ? '未通过 Design Review Gate'
         : '待确认';
+const publishText = publish.status === 'published'
+  ? `已发布（${publish.publishedAt || publish.checkedAt || '时间未知'}）`
+  : publish.status === 'queued'
+    ? `已入队（${publish.checkedAt || '时间未知'}）`
+    : publish.status === 'skipped'
+      ? '已跳过发布'
+      : publish.status === 'failed'
+        ? `发布失败（${publish.checkedAt || '时间未知'}）`
+        : gates.publish === 'Exception-Pass'
+          ? '用户选择不发布'
+          : gates.publish === 'Pass'
+            ? '已通过 Publish Gate'
+            : gates.publish === 'Fail'
+              ? '未通过 Publish Gate'
+              : '待确认';
 
 if (fs.existsSync(projectFile)) {
   let project = fs.readFileSync(projectFile, 'utf8');
@@ -122,7 +141,8 @@ if (fs.existsSync(projectFile)) {
     `- 当前阶段：\`${state.currentStage}\``,
     `- 方案确认：${approvalText}`,
     `- 验证状态：${verificationText}`,
-    `- 设计复核：${designReviewText}`
+    `- 设计复核：${designReviewText}`,
+    `- 发布状态：${publishText}`
   ].join('\n'));
   project = replaceSection(project, 'Gate 状态', [
     `- Route Gate：\`${gates.route}\``,
@@ -130,7 +150,8 @@ if (fs.existsSync(projectFile)) {
     `- Proposal Gate：\`${gates.proposal}\``,
     `- Implementation Gate：\`${gates.implementation}\``,
     `- Verification Gate：\`${gates.verification}\``,
-    `- Design Review Gate：\`${gates.designReview}\``
+    `- Design Review Gate：\`${gates.designReview}\``,
+    `- Publish Gate：\`${gates.publish}\``
   ].join('\n'));
   project = replaceSection(project, '最近进展', [
     `- workflow 阶段已更新为 \`${state.currentStage}\`。`,
@@ -145,13 +166,15 @@ if (fs.existsSync(handoffFile)) {
     `- workflow：\`${state.currentStage}\``,
     `- 方案确认：${approvalText}`,
     `- 验证状态：${verificationText}`,
-    `- 设计复核：${designReviewText}`
+    `- 设计复核：${designReviewText}`,
+    `- 发布状态：${publishText}`
   ].join('\n'));
   handoff = replaceSection(handoff, '当前 Workflow / Gates', [
     `- 当前阶段：\`${state.currentStage}\``,
     `- Proposal Gate：\`${gates.proposal}\``,
     `- Verification Gate：\`${gates.verification}\``,
-    `- Design Review Gate：\`${gates.designReview}\``
+    `- Design Review Gate：\`${gates.designReview}\``,
+    `- Publish Gate：\`${gates.publish}\``
   ].join('\n'));
   handoff = replaceSection(handoff, '最近改动', [
     note ? `- ${note}` : '- workflow 状态已同步',

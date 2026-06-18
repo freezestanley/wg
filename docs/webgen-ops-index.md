@@ -137,6 +137,16 @@
 5. 成功则运行 `./scripts/workflow-handle-compact.sh <slug> done`
 6. 若无需执行或执行失败，则运行 `./scripts/workflow-handle-compact.sh <slug> skipped <note>`
 
+### 工作流 F：交付后发布与异步追踪
+1. `workflow-deliver.sh` 完成后，固定追问用户是否发布
+2. 用户回复 `不发布`：
+   运行 `./scripts/workflow-record-publish.sh <slug> skipped "用户选择不发布"`
+3. 用户回复 `发布`：
+   运行 `./scripts/workflow-record-publish.sh <slug> publish`
+4. 若同步上传失败但异步降级成功，状态会记为 `queued / Pass`
+5. 若需继续追踪队列任务，运行 `./scripts/project-publish-status.sh <slug>`
+6. 发布接口路径、字段名、异步标记字段、轮询地址字段统一从 `.openclaw/webgen-config.json` 读取
+
 ---
 
 ## 三、最关键脚本速查
@@ -163,6 +173,9 @@
 | 启动预览 | `./scripts/project-preview.sh <slug>` |
 | 查看预览状态 | `./scripts/project-preview-status.sh <slug> [--verbose]` |
 | 停止预览 | `./scripts/project-preview-stop.sh <slug>` |
+| 上传发布包 | `./scripts/project-publish.sh <slug>` |
+| 记录发布结果 | `./scripts/workflow-record-publish.sh <slug> <publish|skipped> [note]` |
+| 查询发布状态 | `./scripts/project-publish-status.sh <slug>` |
 | 查看预览总表 | `zsh ./scripts/preview-manager.sh list` |
 | 查看当前预览限制 | `zsh ./scripts/preview-manager.sh limits` |
 | 固定保留预览 | `zsh ./scripts/preview-manager.sh pin <slug>` |

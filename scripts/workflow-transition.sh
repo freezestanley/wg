@@ -24,7 +24,7 @@ case "$SLUG" in
 esac
 
 case "$NEXT_STAGE" in
-  routing|discovery|proposal|implementation|verification|design-review) ;;
+  routing|discovery|proposal|implementation|verification|design-review|publish) ;;
   *)
     echo "Invalid next stage: $NEXT_STAGE" >&2
     exit 1
@@ -49,7 +49,8 @@ const defaultGates = {
   proposal: 'Pending',
   implementation: 'Pending',
   verification: 'Pending',
-  designReview: 'Pending'
+  designReview: 'Pending',
+  publish: 'Pending'
 };
 data.gates = { ...defaultGates, ...(data.gates || {}) };
 data.notes = data.notes || {};
@@ -60,7 +61,8 @@ const allowed = {
   proposal: ['implementation'],
   implementation: ['verification'],
   verification: ['implementation', 'design-review'],
-  'design-review': ['implementation']
+  'design-review': ['implementation', 'publish'],
+  publish: ['design-review']
 };
 if (!allowed[currentStage]) {
   console.error(`Unknown current stage: ${currentStage}`);
@@ -97,5 +99,8 @@ case "$NEXT_STAGE" in
     ;;
   design-review)
     sh "$SET_GATE_SCRIPT" "$SLUG" designReview Pending "已进入 design-review 阶段，待完成页面实看复核" >/dev/null
+    ;;
+  publish)
+    sh "$SET_GATE_SCRIPT" "$SLUG" publish Pending "已进入 publish 阶段，待确认是否发布或记录发布结果" >/dev/null
     ;;
 esac

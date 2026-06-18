@@ -1,6 +1,16 @@
 {
   "preview": {
-    "max": 5,
-    "ttlMinutes": 60
+    "max": 3,
+    "ttlMinutes": 15
+  },
+  "publish": {
+    "enabled": false,
+    "endpoint": "",
+    "timeoutMs": 30000,
+    "fileField": "file",
+    "metadataField": "",
+    "asyncFallback": false,
+    "asyncFlagField": "preferAsync",
+    "statusUrlField": "pollUrl"
   }
 }

@@ -207,3 +207,52 @@
   - `docs/webgen-design-guide.md`
   - `docs/webgen-design-cheatsheet.md`
   - 模板目录自身 `TEMPLATE.md` / `template.json`
+
+## 2026-06-17
+
+### 事项
+把交付后的发布链路补成可执行命令，并补齐异步降级与轮询追踪。
+
+### 本次方案要点
+- 发布链路不再只停留在 SOP 文档，已落成实际脚本：
+  - 用户明确回复 `发布` 才进入发布
+  - 用户明确回复 `不发布` 记 `Publish Gate = Exception-Pass`
+- 发布配置统一从 workspace 级 `.openclaw/webgen-config.json` 读取，避免脚本写死接口路径和字段名。
+- 同步上传失败时，允许自动降级异步请求；异步受理成功后记 `queued / Pass`。
+- 若异步发布进入队列，后续可用独立脚本轮询状态并回写结果。
+
+### 本次改动记录
+- 已新增脚本：
+  - `scripts/project-publish.sh`
+  - `scripts/workflow-record-publish.sh`
+  - `scripts/project-publish-status.sh`
+- 已扩充 `.openclaw/webgen-config.json` 发布配置：
+  - `publish.endpoint`
+  - `publish.timeoutMs`
+  - `publish.fileField`
+  - `publish.metadataField`
+  - `publish.asyncFallback`
+  - `publish.asyncFlagField`
+  - `publish.statusUrlField`
+- 已把 `publish` 状态接入：
+  - `workflow-init.sh`
+  - `workflow-set-gate.sh`
+  - `workflow-transition.sh`
+  - `workflow-report.sh`
+  - `workflow-sync-docs.sh`
+  - `workflow-announce-status.sh`
+  - `project-context-summary.mjs`
+  - `project-resume-context.sh`
+- 已补文档入口：
+  - `docs/session-routing-and-project-commands.md`
+  - `docs/webgen-ops-index.md`
+
+### 验证记录
+- `node --test tests/template-scaffold-context-load.test.mjs`
+- 结果：`30/30` 通过
+
+### 额外修复
+- 修正了一条旧的 preview 回归测试隔离问题：
+  - `project preview enforces capacity by stopping stale unpinned previews before launch`
+  - 原因是复用全局 `preview-registry.json` 时受残留条目污染
+  - 现已改为测试内备份并恢复 registry，只保留本用例相关条目

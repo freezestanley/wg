@@ -29,6 +29,7 @@ APPROVAL_FILE="$WEBGEN_ROOT/approval.json"
 VERIFICATION_FILE="$CHECKS_ROOT/verification.json"
 DELIVERY_FILE="$CHECKS_ROOT/delivery.json"
 DESIGN_REVIEW_FILE="$CHECKS_ROOT/design-review.json"
+PUBLISH_FILE="$CHECKS_ROOT/publish.json"
 SCAFFOLD_FILE="$CHECKS_ROOT/scaffold.json"
 SCOPE_FILE="$WEBGEN_ROOT/write-scope.json"
 SET_GATE_SCRIPT="$SCRIPT_DIR/workflow-set-gate.sh"
@@ -56,7 +57,8 @@ const data = {
     proposal: 'Pending',
     implementation: 'Pending',
     verification: 'Pending',
-    designReview: 'Pending'
+    designReview: 'Pending',
+    publish: 'Pending'
   },
   notes: {
     route: '项目已完成路由进入当前 project session',
@@ -106,6 +108,25 @@ if [ ! -f "$DESIGN_REVIEW_FILE" ]; then
     '  "checkedAt": null,' \
     '  "notes": null' \
     '}' > "$DESIGN_REVIEW_FILE"
+fi
+
+if [ ! -f "$PUBLISH_FILE" ]; then
+  printf '%s\n' '{' \
+    '  "status": "pending",' \
+    '  "gate": "Pending",' \
+    '  "userConfirmed": null,' \
+    '  "artifact": null,' \
+    '  "artifactSha256": null,' \
+    '  "endpoint": null,' \
+    '  "remoteStatus": null,' \
+    '  "releaseId": null,' \
+    '  "jobId": null,' \
+    '  "pollUrl": null,' \
+    '  "publishedUrl": null,' \
+    '  "checkedAt": null,' \
+    '  "publishedAt": null,' \
+    '  "notes": null' \
+    '}' > "$PUBLISH_FILE"
 fi
 
 if [ ! -f "$SCAFFOLD_FILE" ]; then
@@ -164,6 +185,13 @@ if [ ! -f "$SCOPE_FILE" ]; then
       "HANDOFF.md",
       "src/",
       "docs/api/"
+    ],
+    "publish": [
+      ".webgen/context-summary.txt",
+      "PROJECT.md",
+      "HANDOFF.md",
+      "dist.zip",
+      ".webgen/checks/publish.json"
     ]
   }
 }

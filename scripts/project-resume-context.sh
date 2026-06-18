@@ -41,12 +41,13 @@ proposal=$(printf '%s\n' "$SUMMARY" | sed -n 's/^proposal: //p' | head -n 1)
 implementation=$(printf '%s\n' "$SUMMARY" | sed -n 's/^implementation: //p' | head -n 1)
 verification=$(printf '%s\n' "$SUMMARY" | sed -n 's/^verification: //p' | head -n 1)
 design_review=$(printf '%s\n' "$SUMMARY" | sed -n 's/^designReview: //p' | head -n 1)
+publish=$(printf '%s\n' "$SUMMARY" | sed -n 's/^publish: //p' | head -n 1)
 
 printf 'project: %s\n' "$PROJECT_ROOT"
 printf 'stage: %s\n' "${stage:-unknown}"
 printf 'discovery: %s\n' "${discovery:-Missing}"
-printf 'gates: route=%s session=%s proposal=%s implementation=%s verification=%s designReview=%s\n' \
-  "${route:-Pending}" "${session:-Pending}" "${proposal:-Pending}" "${implementation:-Pending}" "${verification:-Pending}" "${design_review:-Pending}"
+printf 'gates: route=%s session=%s proposal=%s implementation=%s verification=%s designReview=%s publish=%s\n' \
+  "${route:-Pending}" "${session:-Pending}" "${proposal:-Pending}" "${implementation:-Pending}" "${verification:-Pending}" "${design_review:-Pending}" "${publish:-Pending}"
 
 NEXT_ITEMS=".webgen/context-summary.txt"
 
@@ -57,7 +58,7 @@ case "$stage" in
   implementation)
     NEXT_ITEMS="$NEXT_ITEMS, HANDOFF.md, PROJECT.md, API.md"
     ;;
-  verification|design-review)
+  verification|design-review|publish)
     NEXT_ITEMS="$NEXT_ITEMS, HANDOFF.md, PROJECT.md, ASSETS.md, API.md"
     ;;
   *)

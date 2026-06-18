@@ -25,7 +25,7 @@ case "$SLUG" in
 esac
 
 case "$GATE" in
-  route|session|proposal|implementation|verification|designReview) ;;
+  route|session|proposal|implementation|verification|designReview|publish) ;;
   *)
     echo "Invalid gate: $GATE" >&2
     exit 1
@@ -57,7 +57,8 @@ const defaults = {
   proposal: 'Pending',
   implementation: 'Pending',
   verification: 'Pending',
-  designReview: 'Pending'
+  designReview: 'Pending',
+  publish: 'Pending'
 };
 
 const data = JSON.parse(fs.readFileSync(file, 'utf8'));

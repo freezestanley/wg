@@ -1,47 +1,36 @@
 {
   "items": [
     {
-      "slug": "preview-recent-1781700972913",
-      "port": 4412,
-      "pid": "99982",
-      "healthcheck": "http://127.0.0.1:4412/",
+      "slug": "preview-pin-1781712475671",
+      "port": 4312,
+      "pid": "99992",
+      "healthcheck": "http://127.0.0.1:4312/",
       "status": "running",
-      "startedAt": "2026-06-17T12:56:13.830Z",
-      "readyAt": "2026-06-17T12:56:13.830Z",
-      "lastSeenAt": "2026-06-17T12:56:14.940Z",
+      "startedAt": "2026-06-17T16:07:56.267Z",
+      "readyAt": "2026-06-17T16:07:56.267Z",
+      "lastSeenAt": "2026-06-17T16:08:00.819Z",
       "pinned": false
     },
     {
-      "slug": "preview-target-1781700972913",
-      "port": 4359,
-      "pid": null,
-      "healthcheck": "http://127.0.0.1:4359/",
-      "status": "stopped",
-      "startedAt": null,
-      "readyAt": null,
-      "lastSeenAt": "2026-06-17T12:56:15.013Z",
-      "pinned": false
-    },
-    {
-      "slug": "deliver-keep-1781700978076",
+      "slug": "deliver-keep-1781712487932",
       "port": 4611,
       "pid": "99961",
       "healthcheck": "http://127.0.0.1:4611/",
       "status": "running",
-      "startedAt": "2026-06-17T12:56:18.977Z",
-      "readyAt": "2026-06-17T12:56:18.977Z",
-      "lastSeenAt": "2026-06-17T12:56:19.112Z",
+      "startedAt": "2026-06-17T16:08:08.846Z",
+      "readyAt": "2026-06-17T16:08:08.846Z",
+      "lastSeenAt": "2026-06-17T16:08:08.971Z",
       "pinned": false
     },
     {
-      "slug": "deliver-pin-1781700978076",
+      "slug": "deliver-pin-1781712487932",
       "port": 4613,
       "pid": "99963",
       "healthcheck": "http://127.0.0.1:4613/",
       "status": "running",
-      "startedAt": "2026-06-17T12:56:19.016Z",
-      "readyAt": "2026-06-17T12:56:19.016Z",
-      "lastSeenAt": "2026-06-17T12:56:19.389Z",
+      "startedAt": "2026-06-17T16:08:08.883Z",
+      "readyAt": "2026-06-17T16:08:08.883Z",
+      "lastSeenAt": "2026-06-17T16:08:09.243Z",
       "pinned": true
     }
   ]
