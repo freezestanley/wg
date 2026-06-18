@@ -253,7 +253,7 @@ routing
 - 用户未明确回复 `发布` 前，不得进入发布动作，不得调用外部发布接口
 - 用户明确回复 `不发布` 时，`Publish Gate = Exception-Pass`
 - 用户明确回复 `发布` 后，才允许进入发布动作
-- 发布接口路径与上传字段参数统一从 workspace 级 `.openclaw/webgen-config.json` 读取；不得在脚本或项目文档中写死这些配置
+- 发布接口路径与上传字段参数统一从 workspace 级 `./config.js` 读取；不得在脚本或项目文档中写死这些配置
 
 `Publish Gate` 通过条件：
 

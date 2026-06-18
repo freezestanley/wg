@@ -217,7 +217,7 @@
 - 发布链路不再只停留在 SOP 文档，已落成实际脚本：
   - 用户明确回复 `发布` 才进入发布
   - 用户明确回复 `不发布` 记 `Publish Gate = Exception-Pass`
-- 发布配置统一从 workspace 级 `.openclaw/webgen-config.json` 读取，避免脚本写死接口路径和字段名。
+- 发布配置统一从 workspace 级 `./config.js` 读取，避免脚本写死接口路径和字段名。
 - 同步上传失败时，允许自动降级异步请求；异步受理成功后记 `queued / Pass`。
 - 若异步发布进入队列，后续可用独立脚本轮询状态并回写结果。
 
@@ -226,7 +226,7 @@
   - `scripts/project-publish.sh`
   - `scripts/workflow-record-publish.sh`
   - `scripts/project-publish-status.sh`
-- 已扩充 `.openclaw/webgen-config.json` 发布配置：
+- 已扩充 `./config.js` 发布配置：
   - `publish.endpoint`
   - `publish.timeoutMs`
   - `publish.fileField`

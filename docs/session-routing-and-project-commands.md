@@ -114,8 +114,8 @@ zsh ./scripts/preview-manager.sh gc
 - `workflow-report.sh` 与 `project-preview-status.sh` 默认输出短摘要，只有显式加 `--verbose` 才输出排障细节。
 - `project-preview.sh` 启动前会自动做 `reap + gc + ensure-capacity`，优先回收旧预览、释放端口。
 - `workflow-deliver.sh` 完成后默认只保留当前项目预览，其它未 pin 预览会自动关闭。
-- 预览治理默认值统一来自 `.openclaw/webgen-config.json`；环境变量如 `WEBGEN_PREVIEW_MAX` 只作为临时覆盖层。
-- 发布接口路径、上传字段参数、异步降级参数与轮询地址字段统一来自 `.openclaw/webgen-config.json`，项目脚本不写死。
+- 预览治理默认值统一来自 `./config.js`；环境变量如 `WEBGEN_PREVIEW_MAX` 只作为临时覆盖层。
+- 发布接口路径、上传字段参数、异步降级参数与轮询地址字段统一来自 `./config.js`，项目脚本不写死。
 
 ## 当前实现约定
 
@@ -360,7 +360,7 @@ slug: demo-brand-site
 ./scripts/project-publish-status.sh <slug>
 ```
 
-5. 发布相关配置统一从 `.openclaw/webgen-config.json` 读取：
+5. 发布相关配置统一从 `./config.js` 读取：
    - `publish.endpoint`
    - `publish.timeoutMs`
    - `publish.fileField`

@@ -4,28 +4,28 @@
 
 # context rules（必须强制遵守）
 
-**默认短输出**
-   - 禁止回显长日志、长工具输出、内部推理。
-   - 工具结果只保留：文件名、行号、字段、结论、下一步,禁止其他内容
+1. **长文档全文最多读取一次**
+   - `DISCOVERY.md`、`PROJECT.md`、`HANDOFF.md`、长源码、长脚本、长 skill 文档禁止反复全文读取。
 
-**默认窄读，禁止全文扫读**
-   - 先 `rg -n` 定位，再 `sed -n` 窄窗口读取。
-   - 禁止默认整读 `DISCOVERY.md`、`PROJECT.md`、`HANDOFF.md`、长源码、长 mock 数据。
-   - 同一文件重复读取必须带明确目标。
+2. **全文读取后必须立刻摘要化**
+   - 只保留 3~8 条短摘要：目标、结构、技术、适配、风险、下一步。
+   - 后续实现优先引用摘要，不再回贴全文。
 
-**上下文膨胀时进入减量模式**
-   - 出现长 history、重复读文件、长工具输出堆积时，立即减量。
-   - 使用`/compact`、handoff动作减少上下文。
-   - 只允许读取 `.webgen/context-summary.txt`、`.webgen/discovery-gap.txt`，以及按需窄读。
-   
-**Discovery 一次补齐，不逐轮试错**
-   - 先看 `context-summary` 和 `discovery-gap`。
-   - 按硬校验要求一次补齐 `DISCOVERY.md` 缺口，再进入后续阶段。
-   - 不允许“补一点 -> 校验 -> 再补一点”。
+3. **默认窄读**
+   - 先 `rg -n` 定位，再 `sed -n` 局部读取。
+   - 同一文件第 2 次及以后读取，必须带明确目标；禁止无目标重读。
 
-**大内容先拆再写**
-   - 大页面、大样式、大脚本禁止一次性整块写入单文件。
-   - 先拆 `section / component / module / style /other`，再由入口组装。
+4. **workflow 只保留命令名和作用**
+   - 只记 `脚本名 + 用途`，不反复读取或回显 shell 源码。
+
+5. **timeout / 膨胀后先 compact，再恢复**
+   - 出现 timeout、重复读长文件、长工具输出堆积时，先 compact。
+   - compact 后最小保留仅限：用户目标、当前阶段、当前要改文件、下一步动作、gate 状态。
+   - 恢复顺序固定为：`.webgen/context-summary.txt` → `.webgen/discovery-gap.txt` → 必要局部窄读。
+
+6. **实现阶段禁止混放全量上下文**
+   - 不得同时长期携带 discovery 全文、workflow 全文、旧模板全文、验证长日志。
+   - 大页面、大样式、大脚本先拆 `section / component / module / style`，再由入口组装。
 
 
 ## 核心职责
@@ -70,7 +70,7 @@
 - 当用户明确要求截图验收时，CDP 只尝试一次；若本次尝试失败，则记录为“截图验收已跳过”，不阻塞验证完成或交付完成。
 - 当项目已验收通过、且进入交付收口后，若存在发布能力，必须先追问用户：`当前项目已验收通过，是否立即发布当前构建包？请回复“发布”或“不发布”。`
 - 用户未明确回复 `发布` 前，禁止进入发布阶段或调用任何外部发布接口；用户回复 `不发布` 时，发布阶段记为 `Exception-Pass`，不阻塞交付完成。
-- 发布接口路径、上传字段参数、鉴权与超时等发布配置统一从 workspace 级 `.openclaw/webgen-config.json` 读取；禁止把这些信息硬编码在脚本、模板消息或项目文档里。
+- 发布接口路径、上传字段参数、鉴权与超时等发布配置统一从 workspace 级 `./config.js` 读取；禁止把这些信息硬编码在脚本、模板消息或项目文档里。
 - 读取 skill 时，webgen 一律优先从 `workspace/skills/<skill-name>/SKILL.md` 读取；禁止拼接出重复的 workspace 绝对路径。若该目录不存在，再回退到系统提供的 skill 原始 location。
 - 所有 landing page / 营销站 / 作品集 / 重设计类页面，在进入最终页面实现前，必须先形成一行 `Design Read`，确定 `DESIGN_VARIANCE / MOTION_INTENSITY / VISUAL_DENSITY` 三档位，并声明 `Atmosphere Layer`（`none / subtle / signature`）；结论写入 `DISCOVERY.md`。
 - 默认必须补齐核心交互状态：`Loading / Empty / Error / Active Feedback`。

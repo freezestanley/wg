@@ -145,7 +145,7 @@
    运行 `./scripts/workflow-record-publish.sh <slug> publish`
 4. 若同步上传失败但异步降级成功，状态会记为 `queued / Pass`
 5. 若需继续追踪队列任务，运行 `./scripts/project-publish-status.sh <slug>`
-6. 发布接口路径、字段名、异步标记字段、轮询地址字段统一从 `.openclaw/webgen-config.json` 读取
+6. 发布接口路径、字段名、异步标记字段、轮询地址字段统一从 `./config.js` 读取
 
 ---
 

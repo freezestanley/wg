@@ -32,6 +32,7 @@ const PREVIEW_SCRIPT = join(WORKSPACE_ROOT, "scripts/project-preview.sh");
 const DESIGN_REVIEW_SCRIPT = join(WORKSPACE_ROOT, "scripts/project-design-review.sh");
 const PREVIEW_MANAGER_SCRIPT = join(WORKSPACE_ROOT, "scripts/preview-manager.sh");
 const GLOBAL_CONFIG_FILE = join(WORKSPACE_ROOT, "config.js");
+const LEGACY_GLOBAL_CONFIG_FILE = join(WORKSPACE_ROOT, ".openclaw", "webgen-config.json");
 const ROUTING_TEMPLATE_FILE = join(WORKSPACE_ROOT, "docs", "webgen-routing-message-templates.md");
 const ERROR_HANDLING_FILE = join(WORKSPACE_ROOT, "docs", "webgen-session-error-handling.md");
 const SOP_GATES_FILE = join(WORKSPACE_ROOT, "docs", "webgen-sop-and-gates.md");
@@ -1449,6 +1450,52 @@ test("preview manager reads capacity limits from global config with env override
       rmSync(GLOBAL_CONFIG_FILE, { force: true });
     } else {
       writeFileSync(GLOBAL_CONFIG_FILE, backup);
+    }
+  }
+});
+
+test("workspace config ignores legacy webgen-config json fallback", () => {
+  const configBackup = existsSync(GLOBAL_CONFIG_FILE)
+    ? execFileSync("cat", [GLOBAL_CONFIG_FILE], { cwd: WORKSPACE_ROOT, encoding: "utf8" })
+    : null;
+  const legacyBackup = existsSync(LEGACY_GLOBAL_CONFIG_FILE)
+    ? execFileSync("cat", [LEGACY_GLOBAL_CONFIG_FILE], { cwd: WORKSPACE_ROOT, encoding: "utf8" })
+    : null;
+
+  try {
+    rmSync(GLOBAL_CONFIG_FILE, { force: true });
+    writeFileSync(
+      LEGACY_GLOBAL_CONFIG_FILE,
+      JSON.stringify(
+        {
+          preview: {
+            max: 99,
+            ttlMinutes: 77
+          }
+        },
+        null,
+        2
+      ) + "\n"
+    );
+
+    const limits = execFileSync("zsh", [PREVIEW_MANAGER_SCRIPT, "limits"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    assert.match(limits, /^preview-max: 8$/m);
+    assert.match(limits, /^preview-ttl-minutes: 60$/m);
+  } finally {
+    if (configBackup === null) {
+      rmSync(GLOBAL_CONFIG_FILE, { force: true });
+    } else {
+      writeFileSync(GLOBAL_CONFIG_FILE, configBackup);
+    }
+
+    if (legacyBackup === null) {
+      rmSync(LEGACY_GLOBAL_CONFIG_FILE, { force: true });
+    } else {
+      writeFileSync(LEGACY_GLOBAL_CONFIG_FILE, legacyBackup);
     }
   }
 });
