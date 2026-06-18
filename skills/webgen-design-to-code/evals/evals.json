@@ -1,0 +1,23 @@
+{
+  "skill_name": "webgen-design-to-code",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "做一个冲浪板品牌 landing page，要有海洋氛围、滚动叙事和强 CTA，要求最后能拆成清晰可维护的原生前端文件结构。",
+      "expected_output": "输出应包含 Design Read、页面结构分区、GSAP/移动端降级策略、明确的文件拆分计划，以及验证清单。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "把现有作品集首页重设计成更大胆的视觉风格，但不要碰 session、preview、publish，只关心设计到代码这段。",
+      "expected_output": "输出应只覆盖设计到代码，不混入 workflow；应给出视觉方向、结构调整、文件修改边界和响应式策略。",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "为一个 SaaS 官网首页做品牌升级，要求 PC、Pad、H5 都有策略，并明确 Loading / Empty / Error / Active Feedback 应如何补齐。",
+      "expected_output": "输出应包含响应式策略、状态补齐清单、文件拆分方案和验证步骤。",
+      "files": []
+    }
+  ]
+}

@@ -31,6 +31,9 @@ const PREVIEW_STATUS_SCRIPT = join(WORKSPACE_ROOT, "scripts/project-preview-stat
 const PREVIEW_SCRIPT = join(WORKSPACE_ROOT, "scripts/project-preview.sh");
 const DESIGN_REVIEW_SCRIPT = join(WORKSPACE_ROOT, "scripts/project-design-review.sh");
 const PREVIEW_MANAGER_SCRIPT = join(WORKSPACE_ROOT, "scripts/preview-manager.sh");
+const SKILL_EVAL_INIT_SCRIPT = join(WORKSPACE_ROOT, "scripts/skill-eval-init.mjs");
+const SKILL_EVAL_RECORD_SCRIPT = join(WORKSPACE_ROOT, "scripts/skill-eval-record.mjs");
+const SKILL_EVAL_PLAN_SCRIPT = join(WORKSPACE_ROOT, "scripts/skill-eval-plan.mjs");
 const GLOBAL_CONFIG_FILE = join(WORKSPACE_ROOT, "config.js");
 const LEGACY_GLOBAL_CONFIG_FILE = join(WORKSPACE_ROOT, ".openclaw", "webgen-config.json");
 const ROUTING_TEMPLATE_FILE = join(WORKSPACE_ROOT, "docs", "webgen-routing-message-templates.md");
@@ -1497,6 +1500,186 @@ test("workspace config ignores legacy webgen-config json fallback", () => {
     } else {
       writeFileSync(LEGACY_GLOBAL_CONFIG_FILE, legacyBackup);
     }
+  }
+});
+
+test("skill eval init scaffolds iteration workspace from evals json", () => {
+  const root = mkdtempSync(join(tmpdir(), "webgen-skill-eval-init-"));
+
+  try {
+    const skillRoot = join(root, "demo-skill");
+    mkdirSync(join(skillRoot, "evals"), { recursive: true });
+    writeFileSync(
+      join(skillRoot, "evals", "evals.json"),
+      JSON.stringify(
+        {
+          skill_name: "demo-skill",
+          evals: [
+            { id: 1, prompt: "Prompt one", expected_output: "Output one", files: [] },
+            { id: 2, prompt: "Prompt two", expected_output: "Output two", files: [] }
+          ]
+        },
+        null,
+        2
+      ) + "\n"
+    );
+
+    const output = execFileSync("node", [SKILL_EVAL_INIT_SCRIPT, skillRoot, "1"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    const workspaceRoot = join(root, "demo-skill-workspace", "iteration-1");
+    const evalOneMeta = join(workspaceRoot, "eval-1", "eval_metadata.json");
+    const evalTwoMeta = join(workspaceRoot, "eval-2", "eval_metadata.json");
+
+    assert.match(output, /iteration-1/);
+    assert.equal(existsSync(join(workspaceRoot, "eval-1", "with_skill", "outputs")), true);
+    assert.equal(existsSync(join(workspaceRoot, "eval-1", "without_skill", "outputs")), true);
+    assert.equal(existsSync(join(workspaceRoot, "eval-2", "with_skill", "outputs")), true);
+    assert.equal(existsSync(join(workspaceRoot, "eval-2", "without_skill", "outputs")), true);
+    assert.equal(existsSync(join(workspaceRoot, "eval-1", "with_skill", "grading.json")), true);
+    assert.equal(existsSync(join(workspaceRoot, "eval-1", "with_skill", "timing.json")), true);
+    assert.equal(existsSync(join(workspaceRoot, "eval-1", "without_skill", "grading.json")), true);
+    assert.equal(existsSync(join(workspaceRoot, "eval-1", "without_skill", "timing.json")), true);
+
+    const evalOne = JSON.parse(execFileSync("cat", [evalOneMeta], { cwd: WORKSPACE_ROOT, encoding: "utf8" }));
+    const evalTwo = JSON.parse(execFileSync("cat", [evalTwoMeta], { cwd: WORKSPACE_ROOT, encoding: "utf8" }));
+    const evalOneWithSkillGrading = JSON.parse(execFileSync("cat", [join(workspaceRoot, "eval-1", "with_skill", "grading.json")], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    }));
+    const evalOneWithSkillTiming = JSON.parse(execFileSync("cat", [join(workspaceRoot, "eval-1", "with_skill", "timing.json")], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    }));
+
+    assert.equal(evalOne.eval_id, 1);
+    assert.equal(evalOne.eval_name, "eval-1");
+    assert.equal(evalOne.prompt, "Prompt one");
+    assert.deepEqual(evalOne.assertions, []);
+
+    assert.equal(evalTwo.eval_id, 2);
+    assert.equal(evalTwo.eval_name, "eval-2");
+    assert.equal(evalTwo.prompt, "Prompt two");
+    assert.deepEqual(evalTwo.assertions, []);
+    assert.deepEqual(evalOneWithSkillGrading.expectations, []);
+    assert.equal(evalOneWithSkillTiming.total_tokens, null);
+    assert.equal(evalOneWithSkillTiming.duration_ms, null);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("skill eval record writes grading and timing results", () => {
+  const root = mkdtempSync(join(tmpdir(), "webgen-skill-eval-record-"));
+
+  try {
+    const runRoot = join(root, "run");
+    mkdirSync(runRoot, { recursive: true });
+
+    execFileSync(
+      "node",
+      [
+        SKILL_EVAL_RECORD_SCRIPT,
+        runRoot,
+        JSON.stringify({
+          expectations: [
+            {
+              text: "输出格式完整",
+              passed: true,
+              evidence: "包含四段固定结构"
+            }
+          ]
+        }),
+        JSON.stringify({
+          total_tokens: 1234,
+          duration_ms: 2500
+        })
+      ],
+      {
+        cwd: WORKSPACE_ROOT,
+        encoding: "utf8"
+      }
+    );
+
+    const grading = JSON.parse(execFileSync("cat", [join(runRoot, "grading.json")], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    }));
+    const timing = JSON.parse(execFileSync("cat", [join(runRoot, "timing.json")], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    }));
+
+    assert.equal(grading.expectations.length, 1);
+    assert.equal(grading.expectations[0].text, "输出格式完整");
+    assert.equal(grading.expectations[0].passed, true);
+    assert.equal(grading.expectations[0].evidence, "包含四段固定结构");
+
+    assert.equal(timing.total_tokens, 1234);
+    assert.equal(timing.duration_ms, 2500);
+    assert.equal(timing.total_duration_seconds, 2.5);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("skill eval plan writes runnable manifest and markdown plan", () => {
+  const root = mkdtempSync(join(tmpdir(), "webgen-skill-eval-plan-"));
+
+  try {
+    const skillRoot = join(root, "demo-skill");
+    mkdirSync(join(skillRoot, "evals"), { recursive: true });
+    writeFileSync(
+      join(skillRoot, "evals", "evals.json"),
+      JSON.stringify(
+        {
+          skill_name: "demo-skill",
+          evals: [
+            { id: 1, prompt: "Prompt one", expected_output: "Output one", files: [] }
+          ]
+        },
+        null,
+        2
+      ) + "\n"
+    );
+
+    execFileSync("node", [SKILL_EVAL_INIT_SCRIPT, skillRoot, "1"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    const output = execFileSync("node", [SKILL_EVAL_PLAN_SCRIPT, skillRoot, "1"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    const iterationRoot = join(root, "demo-skill-workspace", "iteration-1");
+    const manifestFile = join(iterationRoot, "run-manifest.json");
+    const planFile = join(iterationRoot, "run-plan.md");
+    const manifest = JSON.parse(execFileSync("cat", [manifestFile], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    }));
+    const plan = execFileSync("cat", [planFile], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    assert.match(output, /run-manifest\.json/);
+    assert.equal(manifest.skill_name, "demo-skill");
+    assert.equal(manifest.iteration, 1);
+    assert.equal(manifest.runs.length, 2);
+    assert.equal(manifest.runs[0].mode, "with_skill");
+    assert.equal(manifest.runs[1].mode, "without_skill");
+    assert.match(manifest.runs[0].output_dir, /with_skill\/outputs$/);
+    assert.match(manifest.runs[1].output_dir, /without_skill\/outputs$/);
+    assert.match(plan, /with_skill/);
+    assert.match(plan, /without_skill/);
+    assert.match(plan, /Prompt one/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
   }
 });
 
