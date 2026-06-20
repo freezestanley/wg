@@ -1,0 +1,56 @@
+{
+  "stages": {
+    "discovery": [
+      ".webgen/context-summary.txt",
+      ".webgen/discovery-gap.txt",
+      "DISCOVERY.md"
+    ],
+    "proposal": [
+      ".webgen/context-summary.txt",
+      ".webgen/discovery-gap.txt",
+      "DISCOVERY.md"
+    ],
+    "implementation": [
+      ".webgen/context-summary.txt",
+      ".webgen/discovery-gap.txt",
+      "PROJECT.md",
+      "DISCOVERY.md",
+      "ASSETS.md",
+      "API.md",
+      "HANDOFF.md",
+      "index.html",
+      "vite.config.js",
+      "src/",
+      "docs/api/"
+    ],
+    "verification": [
+      ".webgen/context-summary.txt",
+      ".webgen/discovery-gap.txt",
+      "PROJECT.md",
+      "DISCOVERY.md",
+      "ASSETS.md",
+      "API.md",
+      "HANDOFF.md",
+      "src/",
+      "docs/api/"
+    ],
+    "design-review": [
+      ".webgen/context-summary.txt",
+      ".webgen/discovery-gap.txt",
+      "PROJECT.md",
+      "DISCOVERY.md",
+      "ASSETS.md",
+      "API.md",
+      "HANDOFF.md",
+      "src/",
+      "docs/api/"
+    ],
+    "publish": [
+      ".webgen/context-summary.txt",
+      "PROJECT.md",
+      "HANDOFF.md",
+      "dist.zip",
+      ".webgen/checks/publish.json"
+    ]
+  }
+}

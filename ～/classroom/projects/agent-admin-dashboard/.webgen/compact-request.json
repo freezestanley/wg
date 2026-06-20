@@ -1,0 +1,9 @@
+{
+  "requested": true,
+  "requestedAt": "2026-06-20T05:21:17.592Z",
+  "requestedBy": "workflow-enter-implementation",
+  "fromStage": "proposal",
+  "toStage": "implementation",
+  "reason": "stage-transition",
+  "status": "pending"
+}

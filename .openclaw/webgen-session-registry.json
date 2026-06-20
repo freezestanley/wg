@@ -73,5 +73,6 @@
   "glass-cup-site": "agent:webgen:proj-glass-cup-site",
   "agent-workflow-config": "agent:webgen:proj-agent-workflow-config",
   "session-entry-1781927322933": "agent:webgen:proj-session-entry-1781927322933",
-  "session-entry-existing-1781927323927": "agent:webgen:proj-session-entry-existing-1781927323927"
+  "session-entry-existing-1781927323927": "agent:webgen:proj-session-entry-existing-1781927323927",
+  "agent-admin-dashboard": "agent:webgen:proj-agent-admin-dashboard"
 }

@@ -1,0 +1,16 @@
+{
+  "status": "pending",
+  "gate": "Pending",
+  "userConfirmed": null,
+  "artifact": null,
+  "artifactSha256": null,
+  "endpoint": null,
+  "remoteStatus": null,
+  "releaseId": null,
+  "jobId": null,
+  "pollUrl": null,
+  "publishedUrl": null,
+  "checkedAt": null,
+  "publishedAt": null,
+  "notes": null
+}
