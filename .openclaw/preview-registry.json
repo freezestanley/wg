@@ -1,26 +1,37 @@
 {
   "items": [
     {
-      "slug": "aj-jordan-culture",
-      "port": 4276,
-      "pid": "50467",
-      "healthcheck": "http://127.0.0.1:4276/",
+      "slug": "preview-pin-1781927342262",
+      "port": 4312,
+      "pid": "99992",
+      "healthcheck": "http://127.0.0.1:4312/",
       "status": "running",
-      "startedAt": "2026-06-20T00:43:23.413Z",
-      "readyAt": "2026-06-20T00:43:24.535Z",
-      "lastSeenAt": "2026-06-20T02:11:49.400Z",
+      "startedAt": "2026-06-20T03:49:03.397Z",
+      "readyAt": "2026-06-20T03:49:03.397Z",
+      "lastSeenAt": "2026-06-20T03:49:04.149Z",
       "pinned": false
     },
     {
-      "slug": "glass-cup-site",
-      "port": 4366,
-      "pid": "73331",
-      "healthcheck": "http://127.0.0.1:4366/",
+      "slug": "deliver-keep-1781927350926",
+      "port": 4611,
+      "pid": "99961",
+      "healthcheck": "http://127.0.0.1:4611/",
       "status": "running",
-      "startedAt": "2026-06-20T02:11:49.984Z",
-      "readyAt": "2026-06-20T02:11:51.146Z",
-      "lastSeenAt": "2026-06-20T02:11:51.295Z",
+      "startedAt": "2026-06-20T03:49:12.574Z",
+      "readyAt": "2026-06-20T03:49:12.574Z",
+      "lastSeenAt": "2026-06-20T03:49:12.729Z",
       "pinned": false
+    },
+    {
+      "slug": "deliver-pin-1781927350926",
+      "port": 4613,
+      "pid": "99963",
+      "healthcheck": "http://127.0.0.1:4613/",
+      "status": "running",
+      "startedAt": "2026-06-20T03:49:12.610Z",
+      "readyAt": "2026-06-20T03:49:12.610Z",
+      "lastSeenAt": "2026-06-20T03:49:13.114Z",
+      "pinned": true
     }
   ]
 }
