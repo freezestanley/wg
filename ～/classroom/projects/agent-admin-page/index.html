@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WebGen Single Page</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net.cn/npm/animejs/dist/bundles/anime.umd.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://ka-f.webawesome.com/webawesome@3.8.0/styles/webawesome.css"
+    />
+    <script
+      type="module"
+      src="https://ka-f.webawesome.com/webawesome@3.8.0/webawesome.loader.js"
+    ></script>
+  </head>
+  <body class="bg-slate-950 text-slate-50">
+    <div id="app"></div>
+    <!-- anime.js: 页面轻量动效（const { animate } = anime;）。复杂时间轴/滚动动画优先按 gsap-core / gsap-timeline / gsap-scrolltrigger / gsap-react / gsap-performance 路由。 -->
+    <script>
+      // anime.js v4 UMD: 从全局 anime 解构 animate 等 API
+      window.anime && (window.animate = anime.animate || anime);
+    </script>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+  </html>

@@ -1,0 +1,58 @@
+{
+  "stages": {
+    "discovery": [
+      ".webgen/context-summary.txt",
+      ".webgen/discovery-gap.txt",
+      "DISCOVERY.md"
+    ],
+    "proposal": [
+      ".webgen/context-summary.txt",
+      ".webgen/discovery-gap.txt",
+      "DISCOVERY.md"
+    ],
+    "implementation": [
+      ".webgen/context-summary.txt",
+      ".webgen/discovery-gap.txt",
+      "DISCOVERY.md",
+      "ASSETS.md",
+      "API.md",
+      "src/generated/",
+      "src/components/",
+      "src/sections/",
+      "src/modules/",
+      "src/styles.css",
+      "src/styles/"
+    ],
+    "verification": [
+      ".webgen/context-summary.txt",
+      ".webgen/discovery-gap.txt",
+      "ASSETS.md",
+      "HANDOFF.md",
+      "src/generated/",
+      "src/components/",
+      "src/sections/",
+      "src/modules/",
+      "src/styles.css",
+      "src/styles/"
+    ],
+    "design-review": [
+      ".webgen/context-summary.txt",
+      ".webgen/discovery-gap.txt",
+      "ASSETS.md",
+      "HANDOFF.md",
+      "src/generated/",
+      "src/components/",
+      "src/sections/",
+      "src/modules/",
+      "src/styles.css",
+      "src/styles/"
+    ],
+    "publish": [
+      ".webgen/context-summary.txt",
+      "PROJECT.md",
+      "HANDOFF.md",
+      "dist.zip",
+      ".webgen/checks/publish.json"
+    ]
+  }
+}

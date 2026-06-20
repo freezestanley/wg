@@ -1,0 +1,6 @@
+{
+  "confirmed": true,
+  "confirmedAt": "2026-06-20T07:17:25.539Z",
+  "source": "user-message",
+  "summary": "用户确认改版为后台管理系统整体布局，包含可折叠侧栏、固定顶栏、动态面包屑与示例路由占位页"
+}

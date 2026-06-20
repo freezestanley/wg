@@ -1,6 +1,6 @@
 module.exports = {
   "paths": {
-    "projectsRoot": "～/classroom/projects",
+    "projectsRoot": "/Users/za-stanlexu/claw-workspace/projects",
   },
   "publish": {
     "enabled": true

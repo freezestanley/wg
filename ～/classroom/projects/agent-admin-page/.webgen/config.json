@@ -1,7 +1,7 @@
 {
   "project": {
-    "slug": "agent-admin-dashboard",
-    "name": "agent admin dashboard",
+    "slug": "agent-admin-page",
+    "name": "agent admin page",
     "template": "vite-page",
     "stack": "vite-vanilla",
     "language": "javascript",
@@ -24,9 +24,9 @@
     "runtime": "vite",
     "host": "127.0.0.1",
     "portBase": 4173,
-    "port": 4247,
+    "port": 4324,
     "entry": "/",
-    "healthcheck": "http://127.0.0.1:4247/",
+    "healthcheck": "http://127.0.0.1:4324/",
     "proxy": {
       "/api": {
         "target": "https://api.example.com",
@@ -35,11 +35,11 @@
       }
     },
     "state": {
-      "status": "stopped",
-      "pid": null,
-      "startedAt": null,
-      "readyAt": null,
-      "lastStoppedAt": "2026-06-20T06:53:28.444Z",
+      "status": "running",
+      "pid": 74040,
+      "startedAt": "2026-06-20T06:46:39.470Z",
+      "readyAt": "2026-06-20T06:46:40.593Z",
+      "lastStoppedAt": null,
       "lastError": null
     },
     "blocking": true
@@ -89,10 +89,10 @@
     "cdpScreenshotRequested": false
   },
   "envStatus": {
-    "nodeInstalled": false,
+    "nodeInstalled": true,
     "pythonInstalled": false,
-    "lastCheckedAt": "2026-06-20T05:17:12.166Z",
-    "lastPreviewAt": null,
+    "lastCheckedAt": "2026-06-20T06:46:40.593Z",
+    "lastPreviewAt": "2026-06-20T06:46:40.593Z",
     "lastBuildAt": null
   }
 }

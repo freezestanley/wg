@@ -58,7 +58,9 @@ const lines = [
   `requestedBy: ${requestedBy}`,
   `transition: ${fromStage} -> ${toStage}`,
   `summary: ${summaryFile}`,
-  `gap: ${gapFile}`
+  `gap: ${gapFile}`,
+  `carry: context-summary, discovery-gap`,
+  `drop: workflow-chat-history, full-docs, shell-logs, unrelated-code`
 ];
 
 if (requestedAt) {

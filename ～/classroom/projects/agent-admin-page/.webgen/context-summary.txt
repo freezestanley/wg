@@ -1,0 +1,11 @@
+stage: verification
+route: Pass
+session: Pass
+proposal: Fail
+implementation: Pass
+verification: Pass
+designReview: Pending
+publish: Pending
+discovery: Ready with Assumptions
+focus: HANDOFF.md, ASSETS.md, preview-checks
+avoid: DISCOVERY.md-full, raw-build-logs, unrelated-runtime, repeated-long-reads

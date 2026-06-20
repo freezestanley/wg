@@ -64,8 +64,30 @@ const requiredSections = [
 
 const missingSections = requiredSections.filter((section) => !discoveryText.includes(section));
 
+const stage = workflow.currentStage || "unknown";
+
+const focusByStage = {
+  routing: ".webgen/context-summary.txt, .webgen/discovery-gap.txt",
+  discovery: ".webgen/discovery-gap.txt, DISCOVERY.md",
+  proposal: ".webgen/discovery-gap.txt, DISCOVERY.md",
+  implementation: "src/generated/page.js, src/styles.css",
+  verification: "HANDOFF.md, ASSETS.md, preview-checks",
+  "design-review": "HANDOFF.md, ASSETS.md, design-review-notes",
+  publish: "dist.zip, .webgen/checks/publish.json"
+};
+
+const avoidByStage = {
+  routing: "full-docs, shell-logs, unrelated-code, repeated-long-reads",
+  discovery: "PROJECT.md, HANDOFF.md, shell-logs, repeated-long-reads",
+  proposal: "PROJECT.md, HANDOFF.md, shell-logs, repeated-long-reads",
+  implementation: "DISCOVERY.md-full, shell-logs, unrelated-runtime, unrelated-api",
+  verification: "DISCOVERY.md-full, raw-build-logs, unrelated-runtime, repeated-long-reads",
+  "design-review": "DISCOVERY.md-full, raw-build-logs, unrelated-runtime, repeated-long-reads",
+  publish: "DISCOVERY.md-full, shell-logs, src/, repeated-long-reads"
+};
+
 const lines = [
-  `stage: ${workflow.currentStage || "unknown"}`,
+  `stage: ${stage}`,
   `route: ${gates.route}`,
   `session: ${gates.session}`,
   `proposal: ${gates.proposal}`,
@@ -73,7 +95,9 @@ const lines = [
   `verification: ${gates.verification}`,
   `designReview: ${gates.designReview}`,
   `publish: ${gates.publish}`,
-  `discovery: ${discoveryState}`
+  `discovery: ${discoveryState}`,
+  `focus: ${focusByStage[stage] || ".webgen/context-summary.txt"}`,
+  `avoid: ${avoidByStage[stage] || "full-docs, shell-logs, unrelated-code, repeated-long-reads"}`
 ];
 
 if (missingSections.length) {

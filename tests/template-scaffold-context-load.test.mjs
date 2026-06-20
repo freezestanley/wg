@@ -126,6 +126,8 @@ test("project context summary returns short workflow and discovery readiness", (
     assert.match(output, /stage: proposal/);
     assert.match(output, /proposal: Pending/);
     assert.match(output, /discovery: Not Ready/);
+    assert.match(output, /^focus: \.webgen\/discovery-gap\.txt, DISCOVERY\.md$/m);
+    assert.match(output, /^avoid: PROJECT\.md, HANDOFF\.md, shell-logs, repeated-long-reads$/m);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -229,6 +231,8 @@ test("workflow sync writes compact context summary file", () => {
     assert.match(summary, /stage: implementation/);
     assert.match(summary, /proposal: Pass/);
     assert.match(summary, /discovery: Ready/);
+    assert.match(summary, /^focus: src\/generated\/page\.js, src\/styles\.css$/m);
+    assert.match(summary, /^avoid: DISCOVERY\.md-full, shell-logs, unrelated-runtime, unrelated-api$/m);
 
     const gap = execFileSync("sed", ["-n", "1,40p", gapFile], {
       cwd: WORKSPACE_ROOT,
@@ -291,6 +295,42 @@ test("project init includes compact context summary in default scope", () => {
       JSON.stringify(scope.stages.implementation || []),
       /\.webgen\/context-summary\.txt/
     );
+    assert.equal(
+      JSON.stringify(scope.stages.implementation || []).includes('"src/"'),
+      false
+    );
+    assert.equal(
+      JSON.stringify(scope.stages.verification || []).includes('"src/"'),
+      false
+    );
+    assert.equal(
+      JSON.stringify(scope.stages["design-review"] || []).includes('"src/"'),
+      false
+    );
+    assert.equal(
+      JSON.stringify(scope.stages.implementation || []).includes("PROJECT.md"),
+      false
+    );
+    assert.equal(
+      JSON.stringify(scope.stages.implementation || []).includes("HANDOFF.md"),
+      false
+    );
+    assert.match(
+      JSON.stringify(scope.stages.implementation || []),
+      /src\/generated\//
+    );
+    assert.match(
+      JSON.stringify(scope.stages.implementation || []),
+      /src\/styles\.css/
+    );
+    assert.match(
+      JSON.stringify(scope.stages.verification || []),
+      /src\/generated\//
+    );
+    assert.match(
+      JSON.stringify(scope.stages["design-review"] || []),
+      /src\/generated\//
+    );
   } finally {
     rmSync(join(readProjectsRoot(), slug), { recursive: true, force: true });
   }
@@ -313,9 +353,11 @@ test("project resume context prints summary and suggested follow-up reads", () =
     assert.match(output, new RegExp(`^project: ${escapeRegExp(join(readProjectsRoot(), slug))}$`, "m"));
     assert.match(output, /^stage: discovery$/m);
     assert.match(output, /^discovery: Not Ready$/m);
+    assert.match(output, /^focus: \.webgen\/discovery-gap\.txt, DISCOVERY\.md$/m);
+    assert.match(output, /^avoid: PROJECT\.md, HANDOFF\.md, shell-logs, repeated-long-reads$/m);
     assert.match(output, /^next: .*\.webgen\/context-summary\.txt.*\.webgen\/discovery-gap\.txt/m);
-    assert.equal(output.includes("PROJECT.md"), false);
-    assert.equal(output.includes("HANDOFF.md"), false);
+    assert.equal(/^next: .*PROJECT\.md/m.test(output), false);
+    assert.equal(/^next: .*HANDOFF\.md/m.test(output), false);
     assert.equal(output.includes("suggested:"), false);
   } finally {
     rmSync(join(readProjectsRoot(), slug), { recursive: true, force: true });
@@ -751,6 +793,8 @@ test("workflow compact inspect prints minimal dispatcher handoff", () => {
     assert.match(output, /^transition: discovery -> proposal$/m);
     assert.match(output, /^summary: .*\.webgen\/context-summary\.txt$/m);
     assert.match(output, /^gap: .*\.webgen\/discovery-gap\.txt$/m);
+    assert.match(output, /^carry: context-summary, discovery-gap$/m);
+    assert.match(output, /^drop: workflow-chat-history, full-docs, shell-logs, unrelated-code$/m);
     assert.match(output, /^next: run \/compact then sh scripts\/workflow-handle-compact\.sh .* done$/m);
   } finally {
     rmSync(join(readProjectsRoot(), slug), { recursive: true, force: true });
@@ -2034,7 +2078,11 @@ test("workflow command guard allows normal non-write shell commands", () => {
 });
 
 test("design docs include optional scrollytelling delivery pattern", () => {
-  const guide = execFileSync("sed", ["-n", "780,860p", join(WORKSPACE_ROOT, "docs/webgen-design-guide.md")], {
+  const guide = execFileSync("sed", ["-n", "776,860p", join(WORKSPACE_ROOT, "docs/webgen-design-guide.md")], {
+    cwd: WORKSPACE_ROOT,
+    encoding: "utf8"
+  });
+  const templates = execFileSync("sed", ["-n", "1,220p", join(WORKSPACE_ROOT, "docs/webgen-page-type-proposal-templates.md")], {
     cwd: WORKSPACE_ROOT,
     encoding: "utf8"
   });
@@ -2043,20 +2091,40 @@ test("design docs include optional scrollytelling delivery pattern", () => {
     encoding: "utf8"
   });
 
-  assert.match(guide, /Scrollytelling/i);
-  assert.match(guide, /GSAP\s*\+\s*ScrollTrigger/i);
-  assert.match(guide, /宣传类页面.*按需使用|可选交付方案/i);
+  assert.match(guide, /页面类型方案模板已拆分|详见.*webgen-page-type-proposal-templates\.md/i);
+  assert.equal(/GSAP\s*\+\s*ScrollTrigger/i.test(guide), false);
+  assert.equal(/可直接复用方案片段|proposal 片段/i.test(guide), false);
+  assert.match(templates, /Scrollytelling/i);
+  assert.match(templates, /GSAP\s*\+\s*ScrollTrigger/i);
+  assert.match(templates, /宣传类页面.*按需使用|可选交付方案/i);
   assert.match(cheatsheet, /Scrollytelling/i);
 });
 
 test("design guide includes reusable scrollytelling proposal snippet", () => {
-  const guide = execFileSync("sed", ["-n", "819,900p", join(WORKSPACE_ROOT, "docs/webgen-design-guide.md")], {
+  const templates = execFileSync("sed", ["-n", "1,220p", join(WORKSPACE_ROOT, "docs/webgen-page-type-proposal-templates.md")], {
     cwd: WORKSPACE_ROOT,
     encoding: "utf8"
   });
 
-  assert.match(guide, /可直接复用方案片段|proposal 片段/i);
-  assert.match(guide, /Scrollytelling/i);
-  assert.match(guide, /GSAP\s*\+\s*ScrollTrigger/i);
-  assert.match(guide, /创立初心.*设计哲学.*里程碑.*CTA 收口/s);
+  assert.match(templates, /可直接复用方案片段|proposal 片段/i);
+  assert.match(templates, /Scrollytelling/i);
+  assert.match(templates, /GSAP\s*\+\s*ScrollTrigger/i);
+  assert.match(templates, /创立初心.*设计哲学.*里程碑.*CTA 收口/s);
+});
+
+test("design guide references standalone page type proposal templates file", () => {
+  const guide = execFileSync("sed", ["-n", "776,810p", join(WORKSPACE_ROOT, "docs/webgen-design-guide.md")], {
+    cwd: WORKSPACE_ROOT,
+    encoding: "utf8"
+  });
+  const templates = execFileSync("sed", ["-n", "1,260p", join(WORKSPACE_ROOT, "docs/webgen-page-type-proposal-templates.md")], {
+    cwd: WORKSPACE_ROOT,
+    encoding: "utf8"
+  });
+
+  assert.match(guide, /webgen-page-type-proposal-templates\.md/);
+  assert.equal(/### 10\.1 Landing Page 方案模板/.test(guide), false);
+  assert.match(templates, /## 1\. Landing Page 方案模板/);
+  assert.match(templates, /## 2\. Dashboard \/ 工具后台方案模板/);
+  assert.match(templates, /## 3\. 登录 \/ 表单页方案模板/);
 });

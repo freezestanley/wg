@@ -1,0 +1,9 @@
+{
+  "requested": true,
+  "requestedAt": "2026-06-20T07:23:36.615Z",
+  "requestedBy": "workflow-record-verification",
+  "fromStage": "implementation",
+  "toStage": "verification",
+  "reason": "stage-transition",
+  "status": "pending"
+}

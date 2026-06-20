@@ -1,0 +1,90 @@
+{
+  "slug": "agent-admin-page",
+  "currentStage": "verification",
+  "updatedAt": "2026-06-20T07:23:36.363Z",
+  "gates": {
+    "route": "Pass",
+    "session": "Pass",
+    "proposal": "Fail",
+    "implementation": "Pass",
+    "verification": "Pass",
+    "designReview": "Pending",
+    "publish": "Pending"
+  },
+  "notes": {
+    "route": "项目已完成路由进入当前 project session",
+    "session": "session-lock 对账通过",
+    "proposal": "当前阶段不是 proposal",
+    "implementation": "页面主体与实现前置检查已完成",
+    "verification": "已重构为完整后台管理系统布局；包含可折叠侧栏、固定顶栏、通知面板、用户菜单、动态面包屑、内部滚动内容区与多示例路由占位页；pnpm build 与 design guard 通过，预览地址返回 200。",
+    "designReview": "验证已通过，待页面实看设计复核",
+    "publish": "上一轮已记录不发布；当前修正回合暂不进入 publish"
+  },
+  "history": [
+    {
+      "stage": "routing",
+      "at": "2026-06-20T06:23:29.472Z",
+      "by": "workflow-init"
+    },
+    {
+      "stage": "discovery",
+      "at": "2026-06-20T06:23:29.472Z",
+      "by": "workflow-init"
+    },
+    {
+      "stage": "proposal",
+      "at": "2026-06-20T06:38:16.060Z",
+      "by": "workflow-transition"
+    },
+    {
+      "stage": "implementation",
+      "at": "2026-06-20T06:41:41.833Z",
+      "by": "workflow-transition"
+    },
+    {
+      "stage": "verification",
+      "at": "2026-06-20T06:47:43.607Z",
+      "by": "workflow-transition"
+    },
+    {
+      "stage": "design-review",
+      "at": "2026-06-20T06:47:48.852Z",
+      "by": "workflow-transition"
+    },
+    {
+      "stage": "publish",
+      "at": "2026-06-20T06:53:27.879Z",
+      "by": "workflow-transition"
+    },
+    {
+      "stage": "proposal",
+      "at": "2026-06-20T07:01:19Z",
+      "by": "manual-rollback-after-user-rejection"
+    },
+    {
+      "stage": "implementation",
+      "at": "2026-06-20T07:06:55.908Z",
+      "by": "workflow-transition"
+    },
+    {
+      "stage": "verification",
+      "at": "2026-06-20T07:10:58.348Z",
+      "by": "workflow-transition"
+    },
+    {
+      "stage": "design-review",
+      "at": "2026-06-20T07:11:10.876Z",
+      "by": "workflow-transition"
+    },
+    {
+      "stage": "implementation",
+      "at": "2026-06-20T07:22:17.466Z",
+      "by": "manual-reset-for-layout-rework"
+    },
+    {
+      "stage": "verification",
+      "at": "2026-06-20T07:23:36.066Z",
+      "by": "workflow-transition"
+    }
+  ]
+}

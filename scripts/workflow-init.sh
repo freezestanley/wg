@@ -155,37 +155,39 @@ if [ ! -f "$SCOPE_FILE" ]; then
     "implementation": [
       ".webgen/context-summary.txt",
       ".webgen/discovery-gap.txt",
-      "PROJECT.md",
       "DISCOVERY.md",
       "ASSETS.md",
       "API.md",
-      "HANDOFF.md",
-      "index.html",
-      "vite.config.js",
-      "src/",
-      "docs/api/"
+      "src/generated/",
+      "src/components/",
+      "src/sections/",
+      "src/modules/",
+      "src/styles.css",
+      "src/styles/"
     ],
     "verification": [
       ".webgen/context-summary.txt",
       ".webgen/discovery-gap.txt",
-      "PROJECT.md",
-      "DISCOVERY.md",
       "ASSETS.md",
-      "API.md",
       "HANDOFF.md",
-      "src/",
-      "docs/api/"
+      "src/generated/",
+      "src/components/",
+      "src/sections/",
+      "src/modules/",
+      "src/styles.css",
+      "src/styles/"
     ],
     "design-review": [
       ".webgen/context-summary.txt",
       ".webgen/discovery-gap.txt",
-      "PROJECT.md",
-      "DISCOVERY.md",
       "ASSETS.md",
-      "API.md",
       "HANDOFF.md",
-      "src/",
-      "docs/api/"
+      "src/generated/",
+      "src/components/",
+      "src/sections/",
+      "src/modules/",
+      "src/styles.css",
+      "src/styles/"
     ],
     "publish": [
       ".webgen/context-summary.txt",

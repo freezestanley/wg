@@ -42,12 +42,16 @@ implementation=$(printf '%s\n' "$SUMMARY" | sed -n 's/^implementation: //p' | he
 verification=$(printf '%s\n' "$SUMMARY" | sed -n 's/^verification: //p' | head -n 1)
 design_review=$(printf '%s\n' "$SUMMARY" | sed -n 's/^designReview: //p' | head -n 1)
 publish=$(printf '%s\n' "$SUMMARY" | sed -n 's/^publish: //p' | head -n 1)
+focus=$(printf '%s\n' "$SUMMARY" | sed -n 's/^focus: //p' | head -n 1)
+avoid=$(printf '%s\n' "$SUMMARY" | sed -n 's/^avoid: //p' | head -n 1)
 
 printf 'project: %s\n' "$PROJECT_ROOT"
 printf 'stage: %s\n' "${stage:-unknown}"
 printf 'discovery: %s\n' "${discovery:-Missing}"
 printf 'gates: route=%s session=%s proposal=%s implementation=%s verification=%s designReview=%s publish=%s\n' \
   "${route:-Pending}" "${session:-Pending}" "${proposal:-Pending}" "${implementation:-Pending}" "${verification:-Pending}" "${design_review:-Pending}" "${publish:-Pending}"
+printf 'focus: %s\n' "${focus:-.webgen/context-summary.txt}"
+printf 'avoid: %s\n' "${avoid:-full-docs, shell-logs, unrelated-code, repeated-long-reads}"
 
 NEXT_ITEMS=".webgen/context-summary.txt"
 

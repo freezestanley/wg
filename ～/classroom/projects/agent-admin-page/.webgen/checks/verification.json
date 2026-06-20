@@ -1,0 +1,13 @@
+{
+  "status": "passed",
+  "checkedAt": "2026-06-20T07:23:36.178Z",
+  "items": {},
+  "commands": [
+    "pnpm build",
+    "node scripts/page-design-guard.mjs \"～/classroom/projects/agent-admin-page\"",
+    "sh scripts/project-preview.sh agent-admin-page",
+    "curl -I http://127.0.0.1:4324/",
+    "curl -s http://127.0.0.1:4324/src/generated/page.js | head -40"
+  ],
+  "notes": "已重构为完整后台管理系统布局；包含可折叠侧栏、固定顶栏、通知面板、用户菜单、动态面包屑、内部滚动内容区与多示例路由占位页；pnpm build 与 design guard 通过，预览地址返回 200。"
+}
