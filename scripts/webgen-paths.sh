@@ -36,9 +36,21 @@ if (input === "~") {
   input = path.join(os.homedir(), input.slice(2));
 }
 
-const resolved = path.isAbsolute(input)
-  ? path.normalize(input)
-  : path.resolve(workspaceRoot, input);
+const homeRelativeWorkspace = path.relative(os.homedir(), workspaceRoot);
+const normalizedInput = path.normalize(input);
+const looksLikeHomeRelativeWorkspaceMirror =
+  !path.isAbsolute(normalizedInput) &&
+  homeRelativeWorkspace &&
+  (
+    normalizedInput === homeRelativeWorkspace ||
+    normalizedInput.startsWith(`${homeRelativeWorkspace}${path.sep}`)
+  );
+
+const resolved = path.isAbsolute(normalizedInput)
+  ? normalizedInput
+  : looksLikeHomeRelativeWorkspaceMirror
+    ? path.resolve(os.homedir(), normalizedInput)
+    : path.resolve(workspaceRoot, normalizedInput);
 
 process.stdout.write(resolved);
 NODE

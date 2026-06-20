@@ -65,14 +65,17 @@
 - 项目框架禁止使用templates下预置之外的框架模版,如用户要求直接拒绝。
 - 页面设计与实现默认遵循 `docs/webgen-design-guide.md`。
 - 页面设计默认先由 `design-taste-frontend` 生成初始蓝图与实现骨架；需要专项质检时，再按问题调用 `audit / arrange / typeset / colorize / polish / animate / harden`。核心目标是提升页面质量，而不是堆流程；主动规避 AI 模板味、紫蓝发光风、三等分功能卡片、滥用玻璃与阴影。
+- 模板默认页面只允许承担 `hello world` 级空壳职责；设计流程产出不能来自模板默认页面，必须来自 `Design Read`、初始蓝图与后续真实实现。
+- 页面业务代码默认优先落在 `src/generated/page.js`，样式优先落在 `src/styles.css` 或拆分后的 `src/**` 模块；不要把整页实现回写成新的根级脚手架。
+- 禁止用 shell heredoc/python 直接写项目文件；若必须调用 Python 辅助，路径只能通过 argv、环境变量或脚本参数传入，不得在 `<<'PY'` 代码块里写 `$PROJECT_ROOT` 这类未展开字面量。
 - 交付级页面的强制环节是：至少完成一次实际预览验证、一次页面实看设计复核，并修完复核暴露的关键问题；`audit` 是推荐质检能力，不再是唯一强制入口。
 - 当项目风格逐渐稳定时，可在 `skills/impeccable` 体系内使用 `teach-impeccable` 记录风格约束，供后续迭代复用。
 - CDP 截图验证默认关闭跳过；只有用户明确要求截图验收时，才执行 CDP 访问与截图落盘。默认验收以实际预览验证与页面实看设计复核为准。
 - 当用户明确要求截图验收时，CDP 只尝试一次；若本次尝试失败，则记录为“截图验收已跳过”，不阻塞验证完成或交付完成。
-- 当项目已验收通过、且进入交付收口后，若存在发布能力，必须先追问用户：`当前项目已验收通过，是否立即发布当前构建包？请回复“发布”或“不发布”。`
+- 凡项目新建、修改、续改，在已验收通过且进入交付收口后，若存在发布能力，必须先追问用户：`当前项目已验收通过，是否立即发布当前构建包？请回复“发布”或“不发布”。`
 - 用户未明确回复 `发布` 前，禁止进入发布阶段或调用任何外部发布接口；用户回复 `不发布` 时，发布阶段记为 `Exception-Pass`，不阻塞交付完成。
 - 发布接口路径、上传字段参数、鉴权与超时等发布配置统一从 workspace 级 `./config.js` 读取；禁止把这些信息硬编码在脚本、模板消息或项目文档里。
-- 读取 skill 时，webgen 一律优先从 `workspace/skills/<skill-name>/SKILL.md` 读取；禁止拼接出重复的 workspace 绝对路径。若该目录不存在，再回退到系统提供的 skill 原始 location。
+- 读取 skill 时，若是 workspace 内 skill，传给读取工具的字面路径一律写 `skills/<skill-name>/SKILL.md`；不要写 `workspace/skills/...`，更不要写 `.openclaw/agents/webgen/workspace/...` 这类再拼一次 workspace 的路径。若该目录不存在，再回退到系统提供的 skill 原始 location。
 - 所有 landing page / 营销站 / 作品集 / 重设计类页面，在进入最终页面实现前，必须先形成一行 `Design Read`，确定 `DESIGN_VARIANCE / MOTION_INTENSITY / VISUAL_DENSITY` 三档位，并声明 `Atmosphere Layer`（`none / subtle / signature`）；结论写入 `DISCOVERY.md`。
 - 默认必须补齐核心交互状态：`Loading / Empty / Error / Active Feedback`。
 - 默认图标库只使用 Lucide；默认根据场景选择 Anime.js、Motion、GSAP 或 Three.js，禁止无原则混用。
@@ -391,7 +394,7 @@
   - `Implementation Gate`：页面主体、关键交互、核心状态已具备
   - `Verification Gate`：已完成至少一次实际预览 / 构建 / 运行验证
   - `Design Review Gate`：已完成页面实看验收，并记录是否还需继续优化
-  - `Publish Gate`：用户已明确回复 `发布` 并完成发布，或用户明确回复 `不发布` 记为 `Exception-Pass`
+  - `Publish Gate`：用户已明确回复 `发布` 且发布信号已输出并记录为已受理，或用户明确回复 `不发布` 记为 `Exception-Pass`
 
 - **强制规则**
   - `Proposal Gate` 未通过：不得写页面业务代码

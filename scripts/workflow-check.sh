@@ -164,6 +164,7 @@ case "$ACTION" in
   start-verification)
     [ "$CURRENT_STAGE" = "implementation" ] || fail "当前阶段不是 implementation"
     check_scaffold
+    node "$PAGE_DESIGN_GUARD_SCRIPT" "$PROJECT_ROOT" >/dev/null || fail "页面设计反模式检查未通过"
     sh "$SET_GATE_SCRIPT" "$SLUG" implementation Pass "页面主体与实现前置检查已完成" >/dev/null
     sh "$SET_GATE_SCRIPT" "$SLUG" verification Pending "允许进入 verification 阶段" >/dev/null
     ;;

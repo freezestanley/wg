@@ -341,7 +341,7 @@ slug: demo-brand-site
 5. 实现后走 preview / verify / package
 
 #### publish 收口侧
-1. `workflow-deliver.sh` 完成后，先追问用户是否发布
+1. 凡项目新建、修改、续改，`workflow-deliver.sh` 完成后，都必须先追问用户是否发布
 2. 用户明确回复 `不发布`：
 
 ```sh
@@ -354,21 +354,13 @@ slug: demo-brand-site
 ./scripts/workflow-record-publish.sh <slug> publish
 ```
 
-4. 若上一步返回 `queued`，后续可轮询：
+4. 当前发布执行会输出一条单行信号：
 
-```sh
-./scripts/project-publish-status.sh <slug>
+```text
+WEBGEN_PUBLISH|slug=<slug>|distZipFilepath=<absolute-path-to-dist.zip>|sha256=<sha256>|sentAt=<iso8601>
 ```
 
-5. 发布相关配置统一从 `./config.js` 读取：
-   - `publish.endpoint`
-   - `publish.timeoutMs`
-   - `publish.fileField`
-   - `publish.metadataField`
-   - `publish.asyncFallback`
-   - `publish.asyncFlagField`
-   - `publish.statusUrlField`
-   - 若远端接口是纯文件上传（如 `POST /upload` 返回 `files[].path`），可将 `publish.metadataField` 留空；脚本会只上传 zip 文件，并把首个 `files[].path` 归一成 `publishedUrl`
+5. 远端聊天 / WS 应用自行消费该信号并处理后续发布；本地侧将 `.webgen/checks/publish.json` 记为 `queued`
 
 #### compact 消费侧
 1. 阶段切换脚本会写 `projects/<slug>/.webgen/compact-request.json`

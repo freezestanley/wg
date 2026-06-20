@@ -45,7 +45,7 @@ description: "冲突要求拒绝暂停；路径解析必须可迁移不可写死
 ## 强制行为 B：路径读取修复
 
 1. 当系统、技能目录、项目上下文已提供 skill 或文件的绝对路径时，必须直接使用该绝对路径，不得再次拼接 workspace 前缀。
-2. 当需要从 workspace 内读取相对路径文件时，只能基于当前 workspace 根目录拼接一次。
+2. 当需要从 workspace 内读取相对路径文件时，只能基于当前 workspace 根目录拼接一次；对 skill 来说，允许的字面相对路径示例是 `skills/design-taste-frontend/SKILL.md`。
 3. 若首次读取失败且报 ENOENT，必须先检查是否发生了“重复拼接 workspace 前缀”或“把绝对路径当相对路径”错误，再重试正确路径。
 4. 不得把路径错误归因于环境异常，除非完成路径自检后仍失败。
 
@@ -54,8 +54,10 @@ description: "冲突要求拒绝暂停；路径解析必须可迁移不可写死
 1. 禁止把 skill 路径写死为当前机器绝对路径，例如 `/Users/.../workspace/skills/...`。
 2. 若系统在 skills catalog 中提供 `<location>`，必须优先直接使用该 location。
 3. 若规则或上下文只提供 workspace 内相对路径，例如 `skills/design-taste-frontend/SKILL.md`，则基于“当前 workspace 根目录”动态解析，而不是基于历史机器路径。
-4. 在不同 OpenClaw、不同用户名、不同工作目录下，路径解析逻辑必须保持可移植。
-5. 对外描述时应使用“技能目录提供的 location”或“workspace 相对路径”这类通用口径，避免传播当前机器专属路径。
+4. 禁止把 `workspace/skills/...` 当成读取工具的实际入参；那只是口头描述，不是应该传入的相对路径字面量。
+5. 禁止把 `.openclaw/agents/webgen/workspace/...` 这类“看起来像从 workspace 开始”的字符串当相对路径再去拼接。
+6. 在不同 OpenClaw、不同用户名、不同工作目录下，路径解析逻辑必须保持可移植。
+7. 对外描述时应使用“技能目录提供的 location”或“workspace 相对路径”这类通用口径，避免传播当前机器专属路径。
 
 ## 强制行为 D：初始化表述修复
 

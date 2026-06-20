@@ -92,6 +92,7 @@ const gates = {
   publish: 'Pending',
   ...(state.gates || {})
 };
+const awaitingPublishConfirmation = gates.designReview === 'Pass' && gates.publish === 'Pending';
 
 const notes = state.notes || {};
 const verificationStatus = verification.status !== 'pending'
@@ -128,7 +129,9 @@ const approvalStatus = approval.confirmed
   : gates.proposal === 'Exception-Pass'
     ? 'exception-pass'
     : 'pending';
-const nextSteps = nextStepByStage[state.currentStage] || ['根据当前阶段继续推进'];
+const nextSteps = awaitingPublishConfirmation
+  ? ['确认用户是否明确回复“发布”', '固定追问：当前项目已验收通过，是否立即发布当前构建包？请回复“发布”或“不发布”。']
+  : (nextStepByStage[state.currentStage] || ['根据当前阶段继续推进']);
 
 if (!verbose) {
   const lines = [];

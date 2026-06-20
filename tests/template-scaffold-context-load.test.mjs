@@ -32,6 +32,7 @@ const PREVIEW_SCRIPT = join(WORKSPACE_ROOT, "scripts/project-preview.sh");
 const DESIGN_REVIEW_SCRIPT = join(WORKSPACE_ROOT, "scripts/project-design-review.sh");
 const PREVIEW_MANAGER_SCRIPT = join(WORKSPACE_ROOT, "scripts/preview-manager.sh");
 const PATHS_SCRIPT = join(WORKSPACE_ROOT, "scripts/webgen-paths.sh");
+const COMMAND_GUARD_SCRIPT = join(WORKSPACE_ROOT, "scripts/workflow-guard-command.mjs");
 const GLOBAL_CONFIG_FILE = join(WORKSPACE_ROOT, "config.js");
 const LEGACY_GLOBAL_CONFIG_FILE = join(WORKSPACE_ROOT, ".openclaw", "webgen-config.json");
 const ROUTING_TEMPLATE_FILE = join(WORKSPACE_ROOT, "docs", "webgen-routing-message-templates.md");
@@ -630,6 +631,104 @@ test("workflow verification and design review record compact requests on passed 
   }
 });
 
+test("workflow check blocks verification when page still uses scaffold placeholder", () => {
+  const slug = `verification-guard-${Date.now()}`;
+
+  try {
+    execFileSync("sh", ["scripts/project-init.sh", slug, "vite-page"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    execFileSync("sh", ["scripts/workflow-record-approval.sh", slug, "方案已确认"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    execFileSync("node", ["-e", `
+      const fs=require("fs");
+      const file=process.argv[1];
+      fs.writeFileSync(file, [
+        "# Discovery",
+        "",
+        "## Design Read",
+        "",
+        "- 页面类型 / 受众 / 风格语言 / 设计体系：已确认",
+        "",
+        "## 审版检查点",
+        "",
+        "- 首屏焦点：已确认",
+        "- 证明区策略：已确认",
+        "- 内容节奏：已确认",
+        "- CTA 收口方式：已确认",
+        "- H5 首屏优先级：已确认",
+        "",
+        "## 风格档位",
+        "",
+        "- DESIGN_VARIANCE：已确认",
+        "- MOTION_INTENSITY：已确认",
+        "- VISUAL_DENSITY：已确认",
+        "",
+        "## 氛围层策略",
+        "",
+        "- Atmosphere Layer：已确认",
+        "",
+        "## 适配目标",
+        "",
+        "- PC：已确认",
+        "- Pad：已确认",
+        "- H5：已确认",
+        "",
+        "## 交互补全状态",
+        "",
+        "- Loading：已确认",
+        "- Empty：已确认",
+        "- Error：已确认",
+        "- Active Feedback：已确认",
+        "",
+        "## 输入素材收集",
+        "",
+        "- 文案素材：已确认",
+        "",
+        "## 图片策略",
+        "",
+        "- 用户素材：已确认",
+        "",
+        "## API / 数据策略",
+        "",
+        "- 已确认",
+        "",
+        "## 适配检查清单",
+        "",
+        "- [x] 已确认",
+        "",
+        "## Ready / Not Ready",
+        "",
+        "- 当前状态：\`Ready\`"
+      ].join("\\n"));
+    `, join(readProjectsRoot(), slug, "DISCOVERY.md")], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    execFileSync("sh", ["scripts/workflow-enter-implementation.sh", slug], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    assert.throws(
+      () => execFileSync("sh", ["scripts/workflow-check.sh", slug, "start-verification"], {
+        cwd: WORKSPACE_ROOT,
+        encoding: "utf8"
+      }),
+      (error) => {
+        assert.equal(error.status, 2);
+        assert.match(error.stderr, /页面设计反模式检查未通过/);
+        return true;
+      }
+    );
+  } finally {
+    rmSync(join(readProjectsRoot(), slug), { recursive: true, force: true });
+  }
+});
+
 test("workflow compact inspect prints minimal dispatcher handoff", () => {
   const slug = `compact-inspect-${Date.now()}`;
 
@@ -989,26 +1088,17 @@ test("workflow record publish marks exception-pass when user chooses not to publ
   }
 });
 
-test("project publish uploads dist zip using endpoint from workspace config", async () => {
-  const slug = `publish-upload-${Date.now()}`;
+test("project publish emits single-line signal with dist zip filepath", async () => {
+  const slug = `publish-signal-${Date.now()}`;
   const configBackup = existsSync(GLOBAL_CONFIG_FILE)
     ? execFileSync("cat", [GLOBAL_CONFIG_FILE], { cwd: WORKSPACE_ROOT, encoding: "utf8" })
     : null;
 
   try {
-    const fakeBin = mkdtempSync(join(tmpdir(), "webgen-fake-curl-"));
-    const argsFile = join(fakeBin, "curl-args.txt");
-    writeFileSync(join(fakeBin, "curl"), `#!/bin/sh
-printf '%s\n' "$@" > "$WEBGEN_TEST_CURL_ARGS_FILE"
-printf '%s' '{"success":true,"message":"成功上传 1 个文件","files":[{"originalName":"dist.zip","savedName":"1718000000000_dist.zip","mimetype":"application/zip","size":17,"path":"/uploads/1718000000000_dist.zip"}]}'
-`, { mode: 0o755 });
-
     writeWorkspaceConfig({
       preview: { max: 5, ttlMinutes: 60 },
       publish: {
-        enabled: true,
-        endpoint: "https://publish.example.test/upload",
-        timeoutMs: 30000
+        enabled: true
       }
     });
 
@@ -1022,117 +1112,31 @@ printf '%s' '{"success":true,"message":"成功上传 1 个文件","files":[{"ori
 
     const output = execFileSync("sh", [PROJECT_PUBLISH_SCRIPT, slug], {
       cwd: WORKSPACE_ROOT,
-      encoding: "utf8",
-      env: {
-        ...process.env,
-        PATH: `${fakeBin}:${process.env.PATH || ""}`,
-        WEBGEN_TEST_CURL_ARGS_FILE: argsFile
-      }
+      encoding: "utf8"
     });
 
     const publish = JSON.parse(execFileSync("cat", [join(projectRoot, ".webgen", "checks", "publish.json")], {
       cwd: WORKSPACE_ROOT,
       encoding: "utf8"
     }));
-    const curlArgs = existsSync(argsFile)
-      ? execFileSync("cat", [argsFile], { cwd: WORKSPACE_ROOT, encoding: "utf8" })
-      : "";
 
-    assert.match(output, /PUBLISH OK:/);
-    assert.match(curlArgs, /https:\/\/publish\.example\.test\/upload/);
-    assert.match(curlArgs, /file=@/);
-    assert.doesNotMatch(curlArgs, /metadata=/);
-    assert.match(curlArgs, /dist\.zip/);
-    assert.equal(publish.status, "published");
-    assert.equal(publish.remoteStatus, 201);
-    assert.equal(publish.releaseId, null);
-    assert.equal(publish.endpoint, "https://publish.example.test/upload");
-    assert.equal(publish.publishedUrl, "https://publish.example.test/uploads/1718000000000_dist.zip");
-  } finally {
-    if (configBackup === null) {
-      rmSync(GLOBAL_CONFIG_FILE, { force: true });
-    } else {
-      writeFileSync(GLOBAL_CONFIG_FILE, configBackup);
-    }
-    rmSync(join(readProjectsRoot(), slug), { recursive: true, force: true });
-  }
-});
-
-test("project publish falls back to async request when sync upload fails", () => {
-  const slug = `publish-fallback-${Date.now()}`;
-  const configBackup = existsSync(GLOBAL_CONFIG_FILE)
-    ? execFileSync("cat", [GLOBAL_CONFIG_FILE], { cwd: WORKSPACE_ROOT, encoding: "utf8" })
-    : null;
-
-  try {
-    const fakeBin = mkdtempSync(join(tmpdir(), "webgen-fake-curl-fallback-"));
-    const argsFile = join(fakeBin, "curl-args.txt");
-    const countFile = join(fakeBin, "curl-count.txt");
-    writeFileSync(join(fakeBin, "curl"), `#!/bin/sh
-count=0
-if [ -f "$WEBGEN_TEST_CURL_COUNT_FILE" ]; then
-  count=$(cat "$WEBGEN_TEST_CURL_COUNT_FILE")
-fi
-count=$((count+1))
-printf '%s' "$count" > "$WEBGEN_TEST_CURL_COUNT_FILE"
-printf 'CALL-%s\n' "$count" >> "$WEBGEN_TEST_CURL_ARGS_FILE"
-printf '%s\n' "$@" >> "$WEBGEN_TEST_CURL_ARGS_FILE"
-if [ "$count" -eq 1 ]; then
-  exit 22
-fi
-printf '%s' '{"status":"queued","jobId":"job_test","pollUrl":"https://example.test/queue/status/job_test","url":"https://example.test/queue"}'
-`, { mode: 0o755 });
-
-    writeWorkspaceConfig({
-      preview: { max: 5, ttlMinutes: 60 },
-      publish: {
-        enabled: true,
-        endpoint: "https://publish.example.test/upload",
-        timeoutMs: 30000,
-        fileField: "artifactFile",
-        metadataField: "publishMeta",
-        asyncFallback: true,
-        asyncFlagField: "preferAsync",
-        statusUrlField: "pollUrl"
-      }
-    });
-
-    execFileSync("sh", ["scripts/project-init.sh", slug, "vite-page"], {
-      cwd: WORKSPACE_ROOT,
-      encoding: "utf8"
-    });
-
-    const projectRoot = join(readProjectsRoot(), slug);
-    writeFileSync(join(projectRoot, "dist.zip"), "fake-zip-content\n");
-
-    const output = execFileSync("sh", [PROJECT_PUBLISH_SCRIPT, slug], {
-      cwd: WORKSPACE_ROOT,
-      encoding: "utf8",
-      env: {
-        ...process.env,
-        PATH: `${fakeBin}:${process.env.PATH || ""}`,
-        WEBGEN_TEST_CURL_ARGS_FILE: argsFile,
-        WEBGEN_TEST_CURL_COUNT_FILE: countFile
-      }
-    });
-
-    const publish = JSON.parse(execFileSync("cat", [join(projectRoot, ".webgen", "checks", "publish.json")], {
-      cwd: WORKSPACE_ROOT,
-      encoding: "utf8"
-    }));
-    const curlArgs = existsSync(argsFile)
-      ? execFileSync("cat", [argsFile], { cwd: WORKSPACE_ROOT, encoding: "utf8" })
-      : "";
-
-    assert.match(output, /PUBLISH OK:/);
-    assert.match(curlArgs, /CALL-1/);
-    assert.match(curlArgs, /CALL-2/);
-    assert.match(curlArgs, /preferAsync=true/);
+    assert.match(output, /^WEBGEN_PUBLISH\|/m);
+    assert.match(output, new RegExp(`slug=${escapeRegExp(slug)}`));
+    assert.match(output, new RegExp(`distZipFilepath=${escapeRegExp(join(projectRoot, "dist.zip"))}`));
+    assert.match(output, /sha256=[a-f0-9]{64}/);
+    assert.match(output, /sentAt=/);
     assert.equal(publish.status, "queued");
-    assert.equal(publish.remoteStatus, 202);
-    assert.equal(publish.jobId, "job_test");
-    assert.equal(publish.pollUrl, "https://example.test/queue/status/job_test");
-    assert.equal(publish.endpoint, "https://publish.example.test/upload");
+    assert.equal(publish.gate, "Pass");
+    assert.equal(publish.userConfirmed, true);
+    assert.equal(publish.artifact, join(projectRoot, "dist.zip"));
+    assert.equal(typeof publish.artifactSha256, "string");
+    assert.equal(publish.artifactSha256.length, 64);
+    assert.equal(publish.remoteStatus, null);
+    assert.equal(publish.releaseId, null);
+    assert.equal(publish.jobId, null);
+    assert.equal(publish.pollUrl, null);
+    assert.equal(publish.endpoint, null);
+    assert.equal(publish.publishedUrl, null);
   } finally {
     if (configBackup === null) {
       rmSync(GLOBAL_CONFIG_FILE, { force: true });
@@ -1143,86 +1147,6 @@ printf '%s' '{"status":"queued","jobId":"job_test","pollUrl":"https://example.te
   }
 });
 
-test("project publish status polls queued job and records published result", () => {
-  const slug = `publish-status-${Date.now()}`;
-  const configBackup = existsSync(GLOBAL_CONFIG_FILE)
-    ? execFileSync("cat", [GLOBAL_CONFIG_FILE], { cwd: WORKSPACE_ROOT, encoding: "utf8" })
-    : null;
-
-  try {
-    const fakeBin = mkdtempSync(join(tmpdir(), "webgen-fake-curl-status-"));
-    const argsFile = join(fakeBin, "curl-args.txt");
-    writeFileSync(join(fakeBin, "curl"), `#!/bin/sh
-printf '%s\n' "$@" > "$WEBGEN_TEST_CURL_ARGS_FILE"
-printf '%s' '{"status":"published","releaseId":"rel_polled","url":"https://example.test/release/final"}'
-`, { mode: 0o755 });
-
-    writeWorkspaceConfig({
-      preview: { max: 5, ttlMinutes: 60 },
-      publish: {
-        enabled: true,
-        endpoint: "https://publish.example.test/upload",
-        timeoutMs: 30000,
-        statusUrlField: "pollUrl"
-      }
-    });
-
-    execFileSync("sh", ["scripts/project-init.sh", slug, "vite-page"], {
-      cwd: WORKSPACE_ROOT,
-      encoding: "utf8"
-    });
-
-    const projectRoot = join(readProjectsRoot(), slug);
-    writeFileSync(join(projectRoot, ".webgen", "checks", "publish.json"), JSON.stringify({
-      status: "queued",
-      gate: "Pass",
-      userConfirmed: true,
-      artifact: join(projectRoot, "dist.zip"),
-      artifactSha256: "abc",
-      endpoint: "https://publish.example.test/upload",
-      remoteStatus: 202,
-      releaseId: null,
-      jobId: "job_test",
-      pollUrl: "https://example.test/queue/status/job_test",
-      publishedUrl: null,
-      checkedAt: new Date().toISOString(),
-      publishedAt: null,
-      notes: null
-    }, null, 2) + "\n");
-
-    const output = execFileSync("sh", [PROJECT_PUBLISH_STATUS_SCRIPT, slug], {
-      cwd: WORKSPACE_ROOT,
-      encoding: "utf8",
-      env: {
-        ...process.env,
-        PATH: `${fakeBin}:${process.env.PATH || ""}`,
-        WEBGEN_TEST_CURL_ARGS_FILE: argsFile
-      }
-    });
-
-    const publish = JSON.parse(execFileSync("cat", [join(projectRoot, ".webgen", "checks", "publish.json")], {
-      cwd: WORKSPACE_ROOT,
-      encoding: "utf8"
-    }));
-    const curlArgs = existsSync(argsFile)
-      ? execFileSync("cat", [argsFile], { cwd: WORKSPACE_ROOT, encoding: "utf8" })
-      : "";
-
-    assert.match(output, /PUBLISH STATUS OK:/);
-    assert.match(curlArgs, /https:\/\/example\.test\/queue\/status\/job_test/);
-    assert.equal(publish.status, "published");
-    assert.equal(publish.remoteStatus, 200);
-    assert.equal(publish.releaseId, "rel_polled");
-    assert.equal(publish.publishedUrl, "https://example.test/release/final");
-  } finally {
-    if (configBackup === null) {
-      rmSync(GLOBAL_CONFIG_FILE, { force: true });
-    } else {
-      writeFileSync(GLOBAL_CONFIG_FILE, configBackup);
-    }
-    rmSync(join(readProjectsRoot(), slug), { recursive: true, force: true });
-  }
-});
 
 test("project preview status defaults to compact lines", () => {
   const slug = `preview-status-${Date.now()}`;
@@ -1568,6 +1492,19 @@ test("workspace config resolves configurable projects root", () => {
   }
 });
 
+test("workspace path resolver normalizes home-relative workspace mirror path", () => {
+  const resolved = execFileSync(
+    "sh",
+    [PATHS_SCRIPT, "resolve", ".openclaw/agents/webgen/workspace/skills/design-taste-frontend/SKILL.md"],
+    {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    }
+  ).trim();
+
+  assert.equal(resolved, join(WORKSPACE_ROOT, "skills", "design-taste-frontend", "SKILL.md"));
+});
+
 test("project init creates project under configured projects root", () => {
   const configBackup = existsSync(GLOBAL_CONFIG_FILE)
     ? execFileSync("cat", [GLOBAL_CONFIG_FILE], { cwd: WORKSPACE_ROOT, encoding: "utf8" })
@@ -1880,6 +1817,58 @@ test("workflow deliver stops other unpinned previews after delivery", () => {
   }
 });
 
+test("workflow sync docs prioritizes publish confirmation after acceptance", () => {
+  const slug = `publish-confirm-${Date.now()}`;
+
+  try {
+    execFileSync("sh", ["scripts/project-init.sh", slug, "vite-page"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    execFileSync("sh", ["scripts/workflow-record-approval.sh", slug, "方案已确认"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    execFileSync("sh", ["scripts/workflow-transition.sh", slug, "implementation"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    execFileSync("sh", ["scripts/workflow-set-gate.sh", slug, "proposal", "Pass", "方案已确认"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    execFileSync("sh", ["scripts/workflow-record-verification.sh", slug, "passed", "验证通过"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    execFileSync("sh", ["scripts/workflow-record-design-review.sh", slug, "passed", "设计复核通过"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    execFileSync("sh", ["scripts/workflow-deliver.sh", slug], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    const projectRoot = join(readProjectsRoot(), slug);
+    const handoff = execFileSync("cat", [join(projectRoot, "HANDOFF.md")], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+    const report = execFileSync("sh", [WORKFLOW_REPORT_SCRIPT, slug], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    });
+
+    assert.match(handoff, /当前项目已验收通过，先确认用户是否发布/);
+    assert.match(handoff, /请回复“发布”或“不发布”/);
+    assert.match(report, /^publish: pending$/m);
+    assert.match(report, /next: 确认用户是否明确回复“发布”/);
+  } finally {
+    rmSync(join(readProjectsRoot(), slug), { recursive: true, force: true });
+  }
+});
+
 test("routing message templates include explicit project session entry command", () => {
   const content = execFileSync("sed", ["-n", "1,120p", ROUTING_TEMPLATE_FILE], {
     cwd: WORKSPACE_ROOT,
@@ -1891,6 +1880,17 @@ test("routing message templates include explicit project session entry command",
   assert.match(content, /project-session-entry\.sh <slug> <sessionKey> resume:<slug>/);
   assert.match(content, /discovery-gap/);
   assert.match(content, /一次补齐/);
+});
+
+test("routing message templates include scrollytelling design requirement snippet", () => {
+  const content = execFileSync("sed", ["-n", "1,140p", ROUTING_TEMPLATE_FILE], {
+    cwd: WORKSPACE_ROOT,
+    encoding: "utf8"
+  });
+
+  assert.match(content, /Scrollytelling/i);
+  assert.match(content, /GSAP\s*\+\s*ScrollTrigger/i);
+  assert.match(content, /创立初心.*设计哲学.*里程碑.*CTA 收口/s);
 });
 
 test("error handling and sop docs use project session entry as default entrypoint", () => {
@@ -1930,4 +1930,133 @@ test("agents context rules avoid clear and prefer summary-first recovery", () =>
   assert.equal(agents.includes("执行 `/clear`命令清空上下文"), false);
   assert.match(agents, /\.webgen\/context-summary\.txt/);
   assert.match(agents, /discovery-gap/);
+  assert.match(agents, /skills\/<skill-name>\/SKILL\.md/);
+  assert.equal(agents.includes("workspace/skills/<skill-name>/SKILL.md"), false);
+  assert.equal(agents.includes(".openclaw/agents/webgen/workspace/..."), true);
+});
+
+test("template scaffold page defaults to hello world only", () => {
+  const pageSource = execFileSync(
+    "sed",
+    ["-n", "1,220p", join(WORKSPACE_ROOT, "templates/vite-page/scaffold/src/generated/page.js")],
+    {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    }
+  );
+
+  assert.match(pageSource, /hello world/i);
+  assert.equal(/Design Handoff|Hero Slot|Proof Slot|CTA Slot|starter-toast/.test(pageSource), false);
+});
+
+test("template docs enforce hello world empty shell", () => {
+  const templateDoc = execFileSync(
+    "sed",
+    ["-n", "1,220p", join(WORKSPACE_ROOT, "templates/vite-page/TEMPLATE.md")],
+    {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    }
+  );
+
+  assert.match(templateDoc, /hello world/i);
+  assert.match(templateDoc, /默认页面.*空壳|只显示 hello world/i);
+  assert.equal(/状态示例|页面替换槽位/.test(templateDoc), false);
+});
+
+test("agents rules separate scaffold from design output", () => {
+  const agents = execFileSync("sed", ["-n", "60,130p", join(WORKSPACE_ROOT, "AGENTS.md")], {
+    cwd: WORKSPACE_ROOT,
+    encoding: "utf8"
+  });
+
+  assert.match(agents, /设计流程产出.*不能来自模板默认页面|模板默认页面不能承担默认设计示范/i);
+});
+
+test("project prompts forbid heredoc page writes and require argv-based path passing", () => {
+  const agents = execFileSync("sed", ["-n", "1,260p", join(WORKSPACE_ROOT, "AGENTS.md")], {
+    cwd: WORKSPACE_ROOT,
+    encoding: "utf8"
+  });
+  const routing = execFileSync("sed", ["-n", "1,180p", ROUTING_TEMPLATE_FILE], {
+    cwd: WORKSPACE_ROOT,
+    encoding: "utf8"
+  });
+  const templateDoc = execFileSync("sed", ["-n", "1,220p", join(WORKSPACE_ROOT, "templates/vite-page/TEMPLATE.md")], {
+    cwd: WORKSPACE_ROOT,
+    encoding: "utf8"
+  });
+
+  assert.match(agents, /禁止用 shell heredoc\/python 直接写项目文件|禁止用 heredoc\/python 直接写项目文件/i);
+  assert.match(agents, /路径只能通过 argv、环境变量或脚本参数传入|不得在 `<<'PY'`.*\$PROJECT_ROOT/i);
+  assert.match(routing, /页面业务代码优先落 `src\/generated\/page\.js`/i);
+  assert.match(routing, /禁止用 shell heredoc\/python 直接写项目文件|路径只能通过 argv、环境变量或脚本参数传入/i);
+  assert.match(templateDoc, /页面业务代码优先写入 `src\/generated\/page\.js`/i);
+  assert.match(templateDoc, /禁止把 `\$PROJECT_ROOT`.*`<<'PY'`|路径只能通过 argv、环境变量或脚本参数传入/i);
+});
+
+test("workflow command guard rejects python heredoc file writes", () => {
+  assert.throws(
+    () => execFileSync("node", [COMMAND_GUARD_SCRIPT, "sh", "-c", "python3 - <<'PY'\nfrom pathlib import Path\nPath('src/generated/page.js').write_text('hello', encoding='utf-8')\nPY\n"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    }),
+    (error) => {
+      assert.equal(error.status, 2);
+      assert.match(error.stderr || "", /禁止使用 Python heredoc 直接写项目文件/);
+      return true;
+    }
+  );
+});
+
+test("workflow command guard rejects literal PROJECT_ROOT in python heredoc path", () => {
+  assert.throws(
+    () => execFileSync("node", [COMMAND_GUARD_SCRIPT, "sh", "-c", "python3 - <<'PY'\nfrom pathlib import Path\nPath('$PROJECT_ROOT/index.html').write_text('x', encoding='utf-8')\nPY\n"], {
+      cwd: WORKSPACE_ROOT,
+      encoding: "utf8"
+    }),
+    (error) => {
+      assert.equal(error.status, 3);
+      assert.match(error.stderr || "", /\$PROJECT_ROOT/);
+      assert.match(error.stderr || "", /argv|环境变量|脚本参数/);
+      return true;
+    }
+  );
+});
+
+test("workflow command guard allows normal non-write shell commands", () => {
+  const output = execFileSync("node", [COMMAND_GUARD_SCRIPT, "node", "-e", "console.log('ok')"], {
+    cwd: WORKSPACE_ROOT,
+    encoding: "utf8"
+  });
+
+  assert.match(output, /WORKFLOW COMMAND GUARD OK/);
+});
+
+test("design docs include optional scrollytelling delivery pattern", () => {
+  const guide = execFileSync("sed", ["-n", "780,860p", join(WORKSPACE_ROOT, "docs/webgen-design-guide.md")], {
+    cwd: WORKSPACE_ROOT,
+    encoding: "utf8"
+  });
+  const cheatsheet = execFileSync("sed", ["-n", "30,80p", join(WORKSPACE_ROOT, "docs/webgen-design-cheatsheet.md")], {
+    cwd: WORKSPACE_ROOT,
+    encoding: "utf8"
+  });
+
+  assert.match(guide, /Scrollytelling/i);
+  assert.match(guide, /GSAP\s*\+\s*ScrollTrigger/i);
+  assert.match(guide, /宣传类页面.*按需使用|可选交付方案/i);
+  assert.match(cheatsheet, /Scrollytelling/i);
+});
+
+test("design guide includes reusable scrollytelling proposal snippet", () => {
+  const guide = execFileSync("sed", ["-n", "819,900p", join(WORKSPACE_ROOT, "docs/webgen-design-guide.md")], {
+    cwd: WORKSPACE_ROOT,
+    encoding: "utf8"
+  });
+
+  assert.match(guide, /可直接复用方案片段|proposal 片段/i);
+  assert.match(guide, /Scrollytelling/i);
+  assert.match(guide, /GSAP\s*\+\s*ScrollTrigger/i);
+  assert.match(guide, /创立初心.*设计哲学.*里程碑.*CTA 收口/s);
 });

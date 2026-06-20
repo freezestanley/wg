@@ -24,6 +24,19 @@ slug: <project-slug>
 补充说明：<是否允许基于合理假设先做一版>
 ```
 
+默认实现补充约束：
+
+```text
+页面业务代码优先落 `src/generated/page.js`，样式优先落 `src/styles.css` 或拆分后的 `src/**` 模块。
+禁止用 shell heredoc/python 直接写项目文件；若必须用 Python 辅助，路径只能通过 argv、环境变量或脚本参数传入，不得在 `<<'PY'` 中直接写 `$PROJECT_ROOT` 变量字面量。
+```
+
+宣传类可参考复用的 `设计要求` 示例：
+
+```text
+设计要求：采用 Scrollytelling（滚动叙事）方案，基于 GSAP + ScrollTrigger 实现(大模块or页面垂直,单模块可水平滚动)。页面沿“故事发现线”推进，叙事顺序如：故事开端 → 故事过程 → 故事里程碑 → 故事结尾。H5 端允许降级为顺序堆叠 + 轻量 reveal。
+```
+
 ### 2. 已有项目续做模板
 
 ```text
@@ -41,6 +54,19 @@ slug: <project-slug>
 交付要求：<这次需要产出什么>
 发布要求：<验收后是否需要追问发布、发布接口路径与上传字段参数统一从 ./config.js 读取>
 验证要求：<至少要检查什么、是否要求页面实看复核、是否明确要求 CDP 截图验收>
+```
+
+默认实现补充约束：
+
+```text
+页面业务代码优先落 `src/generated/page.js`，样式优先落 `src/styles.css` 或拆分后的 `src/**` 模块。
+禁止用 shell heredoc/python 直接写项目文件；若必须用 Python 辅助，路径只能通过 argv、环境变量或脚本参数传入，不得在 `<<'PY'` 中直接写 `$PROJECT_ROOT` 变量字面量。
+```
+
+宣传类页面续做可直接复用的 `设计要求` 示例：
+
+```text
+设计要求：本轮改版采用 Scrollytelling（滚动叙事）方向，基于 GSAP + ScrollTrigger 重做页面节奏。沿“创立初心 → 设计哲学 → 里程碑 → CTA 收口”组织章节，Pad / H5 端按需降级，避免强保桌面级重滚动编排。
 ```
 
 ---

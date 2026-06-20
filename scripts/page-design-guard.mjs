@@ -22,6 +22,11 @@ const source = readFileSync(pageFile, "utf8");
 const normalized = source.toLowerCase();
 const issues = [];
 
+const hasScaffoldPlaceholder =
+  /hello world/i.test(source) &&
+  /min-h-screen/.test(source) &&
+  /justify-center/.test(source);
+
 function findHeroBlock(input) {
   const h1Index = input.search(/<h1[\s>]/i);
   if (h1Index === -1) return "";
@@ -87,6 +92,10 @@ if (hasHero && !heroHasValueCopy && !heroHasEarlyCta) {
 
 if (hasGenericCtaCopy) {
   issues.push("generic cta copy detected");
+}
+
+if (hasScaffoldPlaceholder) {
+  issues.push("scaffold placeholder not replaced");
 }
 
 if (issues.length > 0) {

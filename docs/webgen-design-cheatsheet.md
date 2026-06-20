@@ -30,6 +30,7 @@
 ## 1. 先问这 8 件事
 
 默认高质量页面设计流程速记：
+0. 模板默认页保持 `hello world` 空壳，不把模板页当默认设计稿
 1. 在 `DISCOVERY.md` 写 `Design Read`
 2. 定 `DESIGN_VARIANCE / MOTION_INTENSITY / VISUAL_DENSITY`
 3. 定 `Atmosphere Layer`：`none / subtle / signature`
@@ -53,6 +54,12 @@
 - 页面源码应通过反模式检查
 - 默认至少检查 Hero、Proof、CTA、三等分卡片反模式
 - 额外检查 Hero 是否缺价值说明 / 首屏 CTA，以及 CTA 文案是否过泛
+
+宣传类页面可选模式：
+- 可按需采用 `Scrollytelling`
+- 默认技术栈：`GSAP + ScrollTrigger`
+- 叙事线可用：创立初心 → 设计哲学 → 里程碑 → CTA 收口
+- H5 默认允许降级为顺序堆叠 + 轻量 reveal
 
 1. 这是新页面还是旧页面改版？
 2. 页面目标是什么：转化 / 展示 / 品牌 / 效率 / 叙事？

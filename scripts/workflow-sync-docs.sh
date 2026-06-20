@@ -92,6 +92,7 @@ const verification = readJson(verificationFile, { status: 'pending', checkedAt: 
 const delivery = readJson(deliveryFile, { status: 'pending', checkedAt: null });
 const designReview = readJson(designReviewFile, { status: 'pending', checkedAt: null, notes: null });
 const publish = readJson(publishFile, { status: 'pending', checkedAt: null, notes: null, gate: 'Pending' });
+const awaitingPublishConfirmation = gates.designReview === 'Pass' && gates.publish === 'Pending';
 
 const approvalText = approval.confirmed
   ? `已确认（${approval.confirmedAt || '时间未知'}）`
@@ -128,6 +129,8 @@ const publishText = publish.status === 'published'
       ? '已跳过发布'
       : publish.status === 'failed'
         ? `发布失败（${publish.checkedAt || '时间未知'}）`
+        : awaitingPublishConfirmation
+          ? '待确认（当前项目已验收通过，先确认用户是否发布）'
         : gates.publish === 'Exception-Pass'
           ? '用户选择不发布'
           : gates.publish === 'Pass'
@@ -135,6 +138,13 @@ const publishText = publish.status === 'published'
             : gates.publish === 'Fail'
               ? '未通过 Publish Gate'
               : '待确认';
+
+const nextSteps = awaitingPublishConfirmation
+  ? [
+      '- 当前项目已验收通过，先确认用户是否发布',
+      '- 固定追问：当前项目已验收通过，是否立即发布当前构建包？请回复“发布”或“不发布”。'
+    ]
+  : (nextStepByStage[state.currentStage] || ['- 根据当前阶段继续推进']);
 
 if (fs.existsSync(projectFile)) {
   let project = fs.readFileSync(projectFile, 'utf8');
@@ -181,7 +191,7 @@ if (fs.existsSync(handoffFile)) {
     note ? `- ${note}` : '- workflow 状态已同步',
     `- 最近同步时间：${state.updatedAt || '未知'}`
   ].join('\n'));
-  handoff = replaceSection(handoff, '下一步', (nextStepByStage[state.currentStage] || ['- 根据当前阶段继续推进']).join('\n'));
+  handoff = replaceSection(handoff, '下一步', nextSteps.join('\n'));
   fs.writeFileSync(handoffFile, handoff);
 }
 NODE

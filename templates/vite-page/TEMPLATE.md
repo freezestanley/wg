@@ -23,12 +23,14 @@
 
 - 有稳定的 Vite 挂载链路
 - 有可选的 preview shell
-- 有响应式安全容器
-- 有最基本的交互状态示例
-- 有明确的页面替换槽位
+- 有最小可运行默认页
+- 有后续真实页面接管的入口
 
-默认模板页只能承担“脚手架占位”职责，不能把自己的文案语气、版式偏好、色彩个性带进最终项目交付。
+默认模板页只能承担“脚手架占位”职责，初始化后的默认页面保持 `hello world` 空壳。
+模板默认页不能提供 Hero、Proof、CTA、状态块、设计说明或任何带审美倾向的版式示范，避免把项目首版带回固定模板味。
 默认构建产物不启用 preview shell；仅在本地调试时通过 `?previewShell=1` 打开辅助壳层。
+页面业务代码优先写入 `src/generated/page.js`，样式优先写入 `src/styles.css` 或拆分后的 `src/**` 模块，不要把整页实现改造成新的根级脚手架。
+禁止用 shell heredoc/python 直接写项目文件；若必须用 Python 辅助，路径只能通过 argv、环境变量或脚本参数传入，禁止把 `$PROJECT_ROOT` 这类变量字面量直接写进 `<<'PY'` 代码块。
 
 ## 默认资源策略
 
@@ -52,6 +54,8 @@
 
 ## 设计执行链
 
+- 模板只落 `hello world` 空壳，不提供默认设计稿
+- 设计流程产出必须来自 `Design Read`、初始蓝图和后续实现，不得来自模板默认页面
 - 写任何页面代码前，先产出一行 `Design Read`
 - 再确定 `DESIGN_VARIANCE / MOTION_INTENSITY / VISUAL_DENSITY`
 - 再声明 `Atmosphere Layer`：`none / subtle / signature`
